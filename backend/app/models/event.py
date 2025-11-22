@@ -73,7 +73,7 @@ class Event(Base):
         video_clip_path: Caminho do clipe de video.
         confidence: Nivel de confianca da deteccao (0-100).
         bounding_box: Coordenadas do objeto detectado (JSON).
-        metadata: Metadados adicionais do evento (JSON).
+        event_metadata: Metadados adicionais do evento (JSON).
         is_read: Indica se o evento foi visualizado.
         is_acknowledged: Indica se o evento foi reconhecido/tratado.
         acknowledged_by: Usuario que reconheceu o evento.
@@ -131,7 +131,7 @@ class Event(Base):
     )  # Nome da zona de deteccao
 
     # Metadados
-    metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON
+    event_metadata: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # JSON
     source: Mapped[Optional[str]] = mapped_column(
         String(50), nullable=True
     )  # camera, system, user, etc.
