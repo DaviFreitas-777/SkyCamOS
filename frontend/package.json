@@ -7,7 +7,7 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "dev": "npx serve public -l 3000 --cors",
+    "dev": "npx serve . -l 3000 --cors -c serve.json",
     "build": "node scripts/build.js",
     "serve": "npx serve dist -l 3000",
     "lint": "npx eslint src/**/*.js",
