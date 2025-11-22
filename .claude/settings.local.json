@@ -11,7 +11,8 @@
       "Bash(where:*)",
       "Bash(python3 init_db.py:*)",
       "Bash(cat:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
