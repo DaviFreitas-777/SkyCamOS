@@ -1,0 +1,35 @@
+# SkyCamOS Desktop Manager - Dependencias
+# =========================================
+
+# ONVIF - Descoberta e controle de cameras IP
+onvif-zeep>=0.2.12
+
+# Zeroconf - Descoberta de servicos na rede (mDNS/SSDP)
+zeroconf>=0.131.0
+
+# PSUtil - Monitoramento de processos e sistema
+psutil>=5.9.0
+
+# PySTray - Icone na bandeja do sistema
+pystray>=0.19.0
+
+# Pillow - Manipulacao de imagens (icones)
+Pillow>=10.0.0
+
+# Watchdog - Monitoramento de arquivos e diretorios
+watchdog>=4.0.0
+
+# PyWin32 - APIs especificas do Windows
+pywin32>=306
+
+# Aiohttp - Cliente HTTP assincrono
+aiohttp>=3.9.0
+
+# Python-dotenv - Variaveis de ambiente
+python-dotenv>=1.0.0
+
+# Rich - Interface CLI rica
+rich>=13.0.0
+
+# Click - Criacao de CLI
+click>=8.1.0

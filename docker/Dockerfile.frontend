@@ -1,0 +1,88 @@
+# ==============================================================================
+# SkyCamOS - Frontend Dockerfile
+# Nginx Alpine otimizado para servir PWA
+# ==============================================================================
+# Multi-stage build:
+# 1. Build do frontend (Node.js)
+# 2. Serve com Nginx Alpine
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Stage 1: Build - Compila os assets do frontend
+# ------------------------------------------------------------------------------
+FROM node:20-alpine AS builder
+
+# Instala dependencias do sistema para compilacao
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++
+
+WORKDIR /app
+
+# Copia arquivos de dependencias primeiro (melhor cache do Docker)
+COPY frontend/package*.json ./
+
+# Instala dependencias
+RUN npm ci --prefer-offline --no-audit
+
+# Copia codigo fonte
+COPY frontend/ ./
+
+# Build para producao
+RUN npm run build
+
+# ------------------------------------------------------------------------------
+# Stage 2: Production - Nginx Alpine otimizado
+# ------------------------------------------------------------------------------
+FROM nginx:1.25-alpine AS production
+
+# Instala curl para health checks
+RUN apk add --no-cache curl
+
+# Remove configuracao padrao do nginx
+RUN rm -rf /etc/nginx/conf.d/default.conf \
+    && rm -rf /usr/share/nginx/html/*
+
+# Copia configuracao customizada do nginx
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+
+# Copia arquivos buildados do frontend
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copia arquivos PWA essenciais (manifest, service worker, icons)
+# Estes arquivos devem estar no diretorio public do frontend
+# COPY frontend/public/manifest.json /usr/share/nginx/html/
+# COPY frontend/public/sw.js /usr/share/nginx/html/
+# COPY frontend/public/icons /usr/share/nginx/html/icons
+
+# Cria diretorio para cache do nginx
+RUN mkdir -p /var/cache/nginx \
+    && chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /usr/share/nginx/html
+
+# Configura permissoes para rodar como usuario nao-root
+RUN chown -R nginx:nginx /var/log/nginx \
+    && touch /var/run/nginx.pid \
+    && chown nginx:nginx /var/run/nginx.pid
+
+# Troca para usuario nao-root
+USER nginx
+
+# Expoe porta 80
+EXPOSE 80
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:80/health || exit 1
+
+# Comando padrao
+CMD ["nginx", "-g", "daemon off;"]
+
+# ==============================================================================
+# Labels para metadados da imagem
+# ==============================================================================
+LABEL maintainer="SkyCamOS Team" \
+    version="1.0.0" \
+    description="SkyCamOS Frontend PWA - Interface de Monitoramento de Cameras" \
+    org.opencontainers.image.source="https://github.com/skycamos/skycamos"

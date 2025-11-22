@@ -1,0 +1,148 @@
+/**
+ * SkyCamOS - Variaveis CSS
+ * Sistema de design tokens para o tema da aplicacao
+ */
+
+:root {
+    /* === Cores Primarias === */
+    --color-primary-50: #eef2ff;
+    --color-primary-100: #e0e7ff;
+    --color-primary-200: #c7d2fe;
+    --color-primary-300: #a5b4fc;
+    --color-primary-400: #818cf8;
+    --color-primary-500: #6366f1;
+    --color-primary-600: #4f46e5;
+    --color-primary-700: #4338ca;
+    --color-primary-800: #3730a3;
+    --color-primary-900: #312e81;
+    --color-primary-950: #1e1b4b;
+
+    /* === Cores de Fundo (Tema Escuro) === */
+    --color-bg-primary: #0f0f23;
+    --color-bg-secondary: #1a1a2e;
+    --color-bg-tertiary: #16162b;
+    --color-bg-card: #2d2d44;
+    --color-bg-card-hover: #3d3d54;
+    --color-bg-elevated: #252540;
+    --color-bg-overlay: rgba(0, 0, 0, 0.7);
+
+    /* === Cores de Texto === */
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a0a0b0;
+    --color-text-tertiary: #6b6b80;
+    --color-text-muted: #4a4a5c;
+    --color-text-inverse: #0f0f23;
+
+    /* === Cores de Estado === */
+    --color-success-light: #86efac;
+    --color-success: #22c55e;
+    --color-success-dark: #16a34a;
+
+    --color-warning-light: #fde047;
+    --color-warning: #eab308;
+    --color-warning-dark: #ca8a04;
+
+    --color-error-light: #fca5a5;
+    --color-error: #ef4444;
+    --color-error-dark: #dc2626;
+
+    --color-info-light: #93c5fd;
+    --color-info: #3b82f6;
+    --color-info-dark: #2563eb;
+
+    /* === Cores de Borda === */
+    --color-border-primary: #3d3d54;
+    --color-border-secondary: #2d2d44;
+    --color-border-focus: #4f46e5;
+
+    /* === Espacamento === */
+    --spacing-xs: 0.25rem;   /* 4px */
+    --spacing-sm: 0.5rem;    /* 8px */
+    --spacing-md: 1rem;      /* 16px */
+    --spacing-lg: 1.5rem;    /* 24px */
+    --spacing-xl: 2rem;      /* 32px */
+    --spacing-2xl: 3rem;     /* 48px */
+    --spacing-3xl: 4rem;     /* 64px */
+
+    /* === Tipografia === */
+    --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-mono: 'SF Mono', 'Fira Code', Consolas, monospace;
+
+    --font-size-xs: 0.75rem;    /* 12px */
+    --font-size-sm: 0.875rem;   /* 14px */
+    --font-size-base: 1rem;     /* 16px */
+    --font-size-lg: 1.125rem;   /* 18px */
+    --font-size-xl: 1.25rem;    /* 20px */
+    --font-size-2xl: 1.5rem;    /* 24px */
+    --font-size-3xl: 1.875rem;  /* 30px */
+    --font-size-4xl: 2.25rem;   /* 36px */
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* === Border Radius === */
+    --radius-sm: 0.25rem;   /* 4px */
+    --radius-md: 0.5rem;    /* 8px */
+    --radius-lg: 0.75rem;   /* 12px */
+    --radius-xl: 1rem;      /* 16px */
+    --radius-2xl: 1.5rem;   /* 24px */
+    --radius-full: 9999px;
+
+    /* === Sombras === */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.3);
+
+    /* === Transicoes === */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 350ms ease;
+
+    /* === Z-Index === */
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-fixed: 300;
+    --z-modal-backdrop: 400;
+    --z-modal: 500;
+    --z-popover: 600;
+    --z-tooltip: 700;
+    --z-toast: 800;
+
+    /* === Layout === */
+    --header-height: 60px;
+    --sidebar-width: 240px;
+    --sidebar-collapsed-width: 64px;
+    --bottom-nav-height: 64px;
+
+    /* === Breakpoints (para referencia em JS) === */
+    --breakpoint-sm: 640px;
+    --breakpoint-md: 768px;
+    --breakpoint-lg: 1024px;
+    --breakpoint-xl: 1280px;
+    --breakpoint-2xl: 1536px;
+}
+
+/* === Media Queries para tema claro (futuro) === */
+@media (prefers-color-scheme: light) {
+    :root.theme-auto {
+        /* Cores podem ser sobrescritas aqui para tema claro automatico */
+    }
+}
+
+/* === Reducao de movimento === */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --transition-fast: 0ms;
+        --transition-normal: 0ms;
+        --transition-slow: 0ms;
+    }
+}

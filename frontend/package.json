@@ -1,0 +1,51 @@
+{
+  "name": "skycamos-frontend",
+  "version": "1.0.0",
+  "description": "SkyCamOS - Sistema de Monitoramento de Cameras IP (PWA)",
+  "author": "SkyCamOS Team",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "npx serve public -l 3000 --cors",
+    "build": "node scripts/build.js",
+    "serve": "npx serve dist -l 3000",
+    "lint": "npx eslint src/**/*.js",
+    "format": "npx prettier --write src/**/*.js",
+    "test": "echo \"Testes nao configurados\" && exit 0",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "serve": "^14.2.0",
+    "esbuild": "^0.19.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0"
+  },
+  "dependencies": {
+    "hls.js": "^1.4.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "browserslist": [
+    "last 2 Chrome versions",
+    "last 2 Firefox versions",
+    "last 2 Safari versions",
+    "last 2 Edge versions"
+  ],
+  "keywords": [
+    "camera",
+    "monitoring",
+    "surveillance",
+    "pwa",
+    "webrtc",
+    "hls",
+    "cctv",
+    "nvr",
+    "ip-camera"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  }
+}

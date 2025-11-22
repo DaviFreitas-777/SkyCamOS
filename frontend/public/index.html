@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="SkyCamOS - Sistema de Monitoramento de Cameras IP">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SkyCamOS">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="icons/icon-192x192.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.svg">
+
+    <!-- Manifest PWA -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Preconnect para APIs -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fontes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="src/styles/variables.css">
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+
+    <title>SkyCamOS - Monitoramento de Cameras</title>
+</head>
+<body>
+    <!-- Container principal da aplicacao -->
+    <div id="app">
+        <!-- Loading inicial -->
+        <div id="loading-screen" class="loading-screen">
+            <div class="loading-content">
+                <div class="loading-logo">
+                    <svg viewBox="0 0 100 100" class="logo-svg">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="20" fill="currentColor"/>
+                        <path d="M50 5 L50 20 M50 80 L50 95 M5 50 L20 50 M80 50 L95 50"
+                              stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h1 class="loading-title">SkyCamOS</h1>
+                <p class="loading-subtitle">Carregando sistema...</p>
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast para notificacoes -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal container -->
+    <div id="modal-container" class="modal-container"></div>
+
+    <!-- Scripts da aplicacao -->
+    <script type="module" src="src/index.js"></script>
+
+    <!-- Registro do Service Worker -->
+    <script>
+        // Registrar Service Worker para PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/service-worker.js', {
+                        scope: '/'
+                    });
+                    console.log('[SW] Service Worker registrado com sucesso:', registration.scope);
+
+                    // Verificar atualizacoes
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('[SW] Nova versao do Service Worker encontrada');
+
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Nova versao disponivel
+                                if (confirm('Nova versao disponivel! Deseja atualizar?')) {
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                    window.location.reload();
+                                }
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error('[SW] Falha ao registrar Service Worker:', error);
+                }
+            });
+
+            // Atualizar pagina quando novo SW assumir controle
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!refreshing) {
+                    refreshing = true;
+                    window.location.reload();
+                }
+            });
+        }
+
+        // Prompt de instalacao PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+
+            // Disparar evento customizado para a aplicacao
+            window.dispatchEvent(new CustomEvent('pwa-installable', { detail: deferredPrompt }));
+        });
+
+        // Detectar quando PWA foi instalado
+        window.addEventListener('appinstalled', () => {
+            console.log('[PWA] Aplicacao instalada com sucesso');
+            deferredPrompt = null;
+        });
+    </script>
+
+    <!-- Fallback para navegadores sem suporte a modules -->
+    <noscript>
+        <div style="padding: 20px; text-align: center; font-family: sans-serif;">
+            <h1>JavaScript Desabilitado</h1>
+            <p>Por favor, habilite o JavaScript para usar o SkyCamOS.</p>
+        </div>
+    </noscript>
+</body>
+</html>

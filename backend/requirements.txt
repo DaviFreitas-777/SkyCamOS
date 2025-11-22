@@ -1,0 +1,42 @@
+# SkyCamOS Backend - Dependencias
+# Framework Web
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Autenticacao e Seguranca
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Banco de Dados
+sqlalchemy>=2.0.0
+aiosqlite>=0.19.0
+
+# Configuracao
+python-dotenv>=1.0.0
+
+# Processamento de Video/Imagem
+opencv-python-headless>=4.8.0
+numpy>=1.24.0
+
+# ONVIF/Cameras IP
+onvif-zeep>=0.2.12
+zeep>=4.2.1
+
+# WebRTC e Streaming
+aiortc>=1.6.0
+websockets>=12.0
+av>=11.0.0
+
+# HTTP Client Async
+httpx>=0.25.0
+aiohttp>=3.9.0
+
+# Utilidades
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+python-dateutil>=2.8.2
+aiofiles>=23.2.1
+
+# Logging
+loguru>=0.7.2

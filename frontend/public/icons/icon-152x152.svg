@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 152 152" width="152" height="152">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Fundo -->
+  <rect width="152" height="152" rx="30" fill="url(#grad1)"/>
+  <!-- Camera body -->
+  <rect x="30" y="48" width="68" height="56" rx="8" fill="#ffffff"/>
+  <!-- Lente -->
+  <circle cx="64" cy="76" r="19" fill="#1e1b4b"/>
+  <circle cx="64" cy="76" r="13" fill="#3730a3"/>
+  <circle cx="64" cy="76" r="5" fill="#ffffff"/>
+  <!-- Viewfinder -->
+  <rect x="98" y="58" width="24" height="28" rx="5" fill="#ffffff"/>
+  <!-- Indicador de gravacao -->
+  <circle cx="42" cy="60" r="6" fill="#ef4444"/>
+</svg>
