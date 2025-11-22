@@ -15,9 +15,9 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [1/3] Instalando dependencias do backend...
+echo [1/3] Instalando dependencias...
 echo.
-cd /d "%~dp0backend"
+cd /d "%~dp0"
 pip install -r requirements.txt --quiet
 if errorlevel 1 (
     echo [ERRO] Falha ao instalar dependencias
@@ -29,7 +29,7 @@ echo.
 
 echo [2/3] Verificando banco de dados...
 echo.
-cd /d "%~dp0database\scripts"
+cd /d "%~dp0..\database\scripts"
 if not exist "..\skycamos.db" (
     echo Banco de dados nao encontrado. Criando...
     py init_db.py
@@ -52,7 +52,7 @@ echo Pressione CTRL+C para parar o servidor
 echo ============================================================
 echo.
 
-cd /d "%~dp0backend"
+cd /d "%~dp0"
 py -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 pause

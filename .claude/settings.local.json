@@ -12,7 +12,8 @@
       "Bash(python3 init_db.py:*)",
       "Bash(cat:*)",
       "Bash(tree:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(del start.bat)"
     ],
     "deny": [],
     "ask": []
