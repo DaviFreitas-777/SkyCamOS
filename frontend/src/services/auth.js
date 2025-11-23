@@ -52,23 +52,28 @@ class AuthService {
      */
     async login(username, password) {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            // OAuth2 usa form-urlencoded
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: JSON.stringify({ username, password })
+                body: formData
             });
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.message || 'Credenciais invalidas');
+                throw new Error(error.detail || 'Credenciais invalidas');
             }
 
             const data = await response.json();
 
-            // Salvar token e usuario
-            this.token = data.token;
+            // Salvar token e usuario (backend retorna access_token, nao token)
+            this.token = data.access_token;
             this.user = data.user;
 
             await storageService.set(STORAGE_KEYS.AUTH_TOKEN, this.token);
@@ -100,7 +105,7 @@ class AuthService {
         // Tentar invalidar token no servidor
         if (this.token) {
             try {
-                await fetch(`${API_BASE_URL}/api/auth/logout`, {
+                await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${this.token}`
@@ -135,7 +140,7 @@ class AuthService {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh?refresh_token=${encodeURIComponent(this.token)}`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.token}`
@@ -147,7 +152,7 @@ class AuthService {
             }
 
             const data = await response.json();
-            this.token = data.token;
+            this.token = data.access_token;
 
             await storageService.set(STORAGE_KEYS.AUTH_TOKEN, this.token);
 
@@ -188,7 +193,8 @@ class AuthService {
         }
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
+            // Usar endpoint /me para validar token
+            const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
@@ -290,7 +296,7 @@ class AuthService {
      * @returns {Promise<void>}
      */
     async forgotPassword(email) {
-        const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -300,7 +306,7 @@ class AuthService {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Erro ao enviar email de recuperacao');
+            throw new Error(error.detail || 'Erro ao enviar email de recuperacao');
         }
     }
 
@@ -311,7 +317,7 @@ class AuthService {
      * @returns {Promise<void>}
      */
     async resetPassword(token, password) {
-        const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -321,7 +327,7 @@ class AuthService {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Erro ao resetar senha');
+            throw new Error(error.detail || 'Erro ao resetar senha');
         }
     }
 
@@ -332,7 +338,7 @@ class AuthService {
      * @returns {Promise<void>}
      */
     async changePassword(currentPassword, newPassword) {
-        const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -346,7 +352,7 @@ class AuthService {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.message || 'Erro ao alterar senha');
+            throw new Error(error.detail || 'Erro ao alterar senha');
         }
     }
 

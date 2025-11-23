@@ -4,7 +4,7 @@
     { "source": "/index.html", "destination": "/public/index.html" },
     { "source": "/manifest.json", "destination": "/public/manifest.json" },
     { "source": "/service-worker.js", "destination": "/public/service-worker.js" },
-    { "source": "/icons/**", "destination": "/public/icons/$1" }
+    { "source": "/icons/:path*", "destination": "/public/icons/:path*" }
   ],
   "headers": [
     {
@@ -17,6 +17,12 @@
       "source": "**/*.css",
       "headers": [
         { "key": "Content-Type", "value": "text/css" }
+      ]
+    },
+    {
+      "source": "**/*.svg",
+      "headers": [
+        { "key": "Content-Type", "value": "image/svg+xml" }
       ]
     }
   ]

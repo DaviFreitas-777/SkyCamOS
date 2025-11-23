@@ -31,7 +31,8 @@ class StorageService {
 
             request.onerror = (event) => {
                 console.error('[Storage] Erro ao abrir IndexedDB:', event.target.error);
-                reject(event.target.error);
+                // Resolve com null para usar fallback localStorage
+                resolve(null);
             };
 
             request.onsuccess = (event) => {

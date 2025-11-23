@@ -30,7 +30,7 @@ class SkycamNotificationBell extends HTMLElement {
 
     async loadNotifications() {
         try {
-            const data = await apiService.get('/api/notifications', { limit: 10 });
+            const data = await apiService.get('/api/v1/notifications', { limit: 10 });
             this.notifications = data.notifications || [];
             this.unreadCount = data.unreadCount || 0;
             this.updateBadge();
@@ -200,7 +200,7 @@ class SkycamNotificationBell extends HTMLElement {
 
     async markAsRead(id) {
         try {
-            await apiService.patch(`/api/notifications/${id}/read`);
+            await apiService.patch(`/api/v1/notifications/${id}/read`);
             const notification = this.notifications.find(n => n.id === id);
             if (notification && !notification.read) {
                 notification.read = true;
@@ -215,7 +215,7 @@ class SkycamNotificationBell extends HTMLElement {
 
     async markAllAsRead() {
         try {
-            await apiService.post('/api/notifications/mark-all-read');
+            await apiService.post('/api/v1/notifications/mark-all-read');
             this.notifications.forEach(n => n.read = true);
             this.unreadCount = 0;
             this.updateBadge();

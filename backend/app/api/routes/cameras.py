@@ -26,6 +26,7 @@ from app.schemas.camera import (
     CameraTestResult,
 )
 from app.services.onvif_discovery import onvif_discovery_service
+from app.services.ssdp_discovery import ssdp_discovery_service
 from app.services.stream_service import stream_service
 
 logger = logging.getLogger(__name__)
@@ -361,13 +362,15 @@ async def update_camera_status(
     "/discover",
     response_model=list[CameraDiscovery],
     summary="Descobrir cameras",
-    description="Busca cameras ONVIF na rede local.",
+    description="Busca cameras ONVIF e SSDP na rede local.",
 )
 async def discover_cameras(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> list[CameraDiscovery]:
     """
-    Descobre cameras na rede via ONVIF.
+    Descobre cameras na rede via ONVIF e SSDP.
+
+    Executa ambas descobertas em paralelo e combina os resultados.
 
     Args:
         current_user: Usuario autenticado.
@@ -375,6 +378,8 @@ async def discover_cameras(
     Returns:
         list[CameraDiscovery]: Cameras descobertas.
     """
+    import asyncio
+
     # Verifica permissao
     if not current_user.can_manage_cameras:
         raise HTTPException(
@@ -382,10 +387,29 @@ async def discover_cameras(
             detail="Sem permissao para descobrir cameras",
         )
 
-    cameras = await onvif_discovery_service.discover()
+    # Executa descobertas em paralelo
+    onvif_task = onvif_discovery_service.discover()
+    ssdp_task = ssdp_discovery_service.discover(cameras_only=True)
 
-    return [
-        CameraDiscovery(
+    onvif_cameras, ssdp_devices = await asyncio.gather(
+        onvif_task, ssdp_task, return_exceptions=True
+    )
+
+    # Trata excecoes
+    if isinstance(onvif_cameras, Exception):
+        logger.error(f"Erro na descoberta ONVIF: {onvif_cameras}")
+        onvif_cameras = []
+
+    if isinstance(ssdp_devices, Exception):
+        logger.error(f"Erro na descoberta SSDP: {ssdp_devices}")
+        ssdp_devices = []
+
+    # Combina resultados (ONVIF tem prioridade)
+    discovered: dict[str, CameraDiscovery] = {}
+
+    # Adiciona cameras ONVIF
+    for c in onvif_cameras:
+        discovered[c.ip_address] = CameraDiscovery(
             ip_address=c.ip_address,
             port=c.port,
             protocol="onvif",
@@ -395,8 +419,24 @@ async def discover_cameras(
             onvif_url=c.onvif_url,
             requires_auth=True,
         )
-        for c in cameras
-    ]
+
+    # Adiciona dispositivos SSDP que nao estao no ONVIF
+    for d in ssdp_devices:
+        if d.ip_address not in discovered:
+            discovered[d.ip_address] = CameraDiscovery(
+                ip_address=d.ip_address,
+                port=d.port,
+                protocol="ssdp",
+                manufacturer=d.manufacturer,
+                model=d.model,
+                name=d.friendly_name or f"Camera {d.ip_address}",
+                onvif_url=None,
+                requires_auth=True,
+            )
+
+    logger.info(f"Total de cameras descobertas: {len(discovered)} (ONVIF: {len(onvif_cameras)}, SSDP: {len(ssdp_devices)})")
+
+    return list(discovered.values())
 
 
 @router.post(

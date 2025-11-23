@@ -44,7 +44,8 @@ class SkyCamApp {
     async init() {
         console.log('[App] Inicializando SkyCamOS...');
 
-        // Verificar autenticacao
+        // Inicializar e verificar autenticacao
+        await this.auth.init();
         const isAuthenticated = this.auth.isAuthenticated;
 
         // Configurar roteamento

@@ -120,17 +120,25 @@ class SkycamLoginForm extends HTMLElement {
     }
 
     async handleSubmit() {
-        if (this.isLoading) return;
+        // Prevenir submissao dupla
+        if (this.isLoading || this._submitting) return;
+        this._submitting = true;
         this.isLoading = true;
         this.updateButton();
 
         try {
             if (this.mode === 'login') {
-                const username = this.querySelector('#username').value;
+                const username = this.querySelector('#username').value.trim();
                 const password = this.querySelector('#password').value;
+
+                if (!username || !password) {
+                    throw new Error('Preencha todos os campos');
+                }
+
                 await this.auth.login(username, password);
                 this.notifications.success('Login realizado com sucesso!');
-                window.location.hash = '#/dashboard';
+                // Redirecionamento e feito automaticamente pelo handleAuthChange no App.js
+                return; // Sair apos login bem sucedido
             } else {
                 const email = this.querySelector('#email').value;
                 if (!isValidEmail(email)) {
@@ -144,10 +152,10 @@ class SkycamLoginForm extends HTMLElement {
             }
         } catch (error) {
             this.notifications.error(error.message || 'Erro ao processar solicitacao');
+            this.isLoading = false;
+            this._submitting = false;
+            this.updateButton();
         }
-
-        this.isLoading = false;
-        this.updateButton();
     }
 
     updateButton() {

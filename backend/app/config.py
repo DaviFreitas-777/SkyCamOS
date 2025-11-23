@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     # Banco de Dados
-    database_url: str = "sqlite+aiosqlite:///./skycamos.db"
+    database_url: str = "sqlite+aiosqlite:///./data/skycamos.db"
 
     # Armazenamento
     recordings_path: str = "./recordings"

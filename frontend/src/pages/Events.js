@@ -33,9 +33,9 @@ class EventsPage extends HTMLElement {
                 apiService.getCameras()
             ]);
 
-            this.events = eventsData.events || eventsData;
+            this.events = Array.isArray(eventsData) ? eventsData : (eventsData.events || []);
             this.pagination.total = eventsData.total || this.events.length;
-            this.cameras = cameras;
+            this.cameras = Array.isArray(cameras) ? cameras : [];
             this.renderEvents();
         } catch (error) {
             console.error('[Events] Erro ao carregar:', error);

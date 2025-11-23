@@ -104,7 +104,7 @@ class SkycamCameraGrid extends HTMLElement {
                                 camera-id="${camera.id}"
                                 camera-name="${camera.name}"
                                 camera-status="${camera.status}"
-                                camera-stream="${camera.streamUrl || ''}"
+                                camera-stream="${camera.stream_url || camera.streamUrl || ''}"
                                 data-index="${index}">
                             </skycam-camera-card>
                         `).join('') :

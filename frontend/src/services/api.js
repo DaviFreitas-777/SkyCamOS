@@ -37,11 +37,12 @@ class ApiService {
     /**
      * Criar controller de abort para requisicao
      * @param {string} requestId - ID unico da requisicao
+     * @param {boolean} cancelPrevious - Se deve cancelar requisicao anterior
      * @returns {AbortController}
      */
-    createAbortController(requestId) {
-        // Cancelar requisicao anterior com mesmo ID se existir
-        if (this.abortControllers.has(requestId)) {
+    createAbortController(requestId, cancelPrevious = false) {
+        // Cancelar requisicao anterior com mesmo ID apenas se solicitado
+        if (cancelPrevious && this.abortControllers.has(requestId)) {
             this.abortControllers.get(requestId).abort();
         }
 
@@ -67,7 +68,8 @@ class ApiService {
     async request(endpoint, options = {}) {
         const url = `${this.baseUrl}${endpoint}`;
         const requestId = options.requestId || `${options.method || 'GET'}-${endpoint}`;
-        const controller = this.createAbortController(requestId);
+        const cancelPrevious = options.cancelPrevious || false;
+        const controller = this.createAbortController(requestId, cancelPrevious);
 
         // Timeout
         const timeoutId = setTimeout(() => {
@@ -295,7 +297,7 @@ class ApiService {
      * @returns {Promise<Array>}
      */
     async getCameras() {
-        return this.get('/api/cameras');
+        return this.get('/api/v1/cameras');
     }
 
     /**
@@ -304,7 +306,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getCamera(id) {
-        return this.get(`/api/cameras/${id}`);
+        return this.get(`/api/v1/cameras/${id}`);
     }
 
     /**
@@ -313,7 +315,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async createCamera(data) {
-        return this.post('/api/cameras', data);
+        return this.post('/api/v1/cameras', data);
     }
 
     /**
@@ -323,7 +325,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async updateCamera(id, data) {
-        return this.put(`/api/cameras/${id}`, data);
+        return this.put(`/api/v1/cameras/${id}`, data);
     }
 
     /**
@@ -332,7 +334,7 @@ class ApiService {
      * @returns {Promise<void>}
      */
     async deleteCamera(id) {
-        return this.delete(`/api/cameras/${id}`);
+        return this.delete(`/api/v1/cameras/${id}`);
     }
 
     /**
@@ -340,7 +342,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getCamerasStatus() {
-        return this.get('/api/cameras/status');
+        return this.get('/api/v1/cameras/status');
     }
 
     /**
@@ -349,7 +351,7 @@ class ApiService {
      * @returns {Promise<Blob>}
      */
     async getCameraSnapshot(id) {
-        const response = await fetch(`${this.baseUrl}/api/cameras/${id}/snapshot`, {
+        const response = await fetch(`${this.baseUrl}/api/v1/cameras/${id}/snapshot`, {
             headers: this.getHeaders()
         });
 
@@ -360,6 +362,23 @@ class ApiService {
         return response.blob();
     }
 
+    /**
+     * Descobrir cameras ONVIF na rede
+     * @returns {Promise<Array>}
+     */
+    async discoverCameras() {
+        return this.post('/api/v1/cameras/discover');
+    }
+
+    /**
+     * Testar conexao com camera
+     * @param {Object} data - Dados de conexao
+     * @returns {Promise<Object>}
+     */
+    async testCameraConnection(data) {
+        return this.post('/api/v1/cameras/test', data);
+    }
+
     // --- Gravacoes ---
 
     /**
@@ -368,7 +387,7 @@ class ApiService {
      * @returns {Promise<Array>}
      */
     async getRecordings(params = {}) {
-        return this.get('/api/recordings', params);
+        return this.get('/api/v1/recordings', params);
     }
 
     /**
@@ -377,7 +396,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getRecording(id) {
-        return this.get(`/api/recordings/${id}`);
+        return this.get(`/api/v1/recordings/${id}`);
     }
 
     /**
@@ -386,7 +405,7 @@ class ApiService {
      * @returns {Promise<void>}
      */
     async deleteRecording(id) {
-        return this.delete(`/api/recordings/${id}`);
+        return this.delete(`/api/v1/recordings/${id}`);
     }
 
     /**
@@ -395,8 +414,18 @@ class ApiService {
      * @returns {Promise<string>} - URL de download
      */
     async getRecordingDownloadUrl(id) {
-        const data = await this.get(`/api/recordings/${id}/download`);
-        return data.url;
+        const token = authService.getToken();
+        return `${this.baseUrl}/api/v1/recordings/${id}/download?token=${token}`;
+    }
+
+    /**
+     * Obter URL de stream de gravacao
+     * @param {string} id - ID da gravacao
+     * @returns {string} - URL de stream
+     */
+    getRecordingStreamUrl(id) {
+        const token = authService.getToken();
+        return `${this.baseUrl}/api/v1/recordings/${id}/stream?token=${token}`;
     }
 
     // --- Eventos ---
@@ -407,7 +436,7 @@ class ApiService {
      * @returns {Promise<Array>}
      */
     async getEvents(params = {}) {
-        return this.get('/api/events', params);
+        return this.get('/api/v1/events', params);
     }
 
     /**
@@ -416,7 +445,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getEvent(id) {
-        return this.get(`/api/events/${id}`);
+        return this.get(`/api/v1/events/${id}`);
     }
 
     /**
@@ -425,7 +454,7 @@ class ApiService {
      * @returns {Promise<void>}
      */
     async markEventAsRead(id) {
-        return this.patch(`/api/events/${id}/read`);
+        return this.patch(`/api/v1/events/${id}/read`);
     }
 
     /**
@@ -433,7 +462,7 @@ class ApiService {
      * @returns {Promise<void>}
      */
     async markAllEventsAsRead() {
-        return this.post('/api/events/mark-all-read');
+        return this.post('/api/v1/events/mark-all-read');
     }
 
     // --- Configuracoes ---
@@ -443,7 +472,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getSettings() {
-        return this.get('/api/settings');
+        return this.get('/api/v1/settings');
     }
 
     /**
@@ -452,7 +481,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async updateSettings(data) {
-        return this.put('/api/settings', data);
+        return this.put('/api/v1/settings', data);
     }
 
     // --- Usuario ---
@@ -462,7 +491,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async getProfile() {
-        return this.get('/api/user/profile');
+        return this.get('/api/v1/user/profile');
     }
 
     /**
@@ -471,7 +500,7 @@ class ApiService {
      * @returns {Promise<Object>}
      */
     async updateProfile(data) {
-        return this.put('/api/user/profile', data);
+        return this.put('/api/v1/user/profile', data);
     }
 
     /**
@@ -480,7 +509,7 @@ class ApiService {
      * @returns {Promise<void>}
      */
     async changePassword(data) {
-        return this.post('/api/user/change-password', data);
+        return this.post('/api/v1/user/change-password', data);
     }
 }
 

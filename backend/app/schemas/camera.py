@@ -243,6 +243,7 @@ class CameraResponse(CameraBase):
 
     snapshot_url: Optional[str] = None
     thumbnail_path: Optional[str] = None
+    stream_url: Optional[str] = None
 
     latitude: Optional[float] = None
     longitude: Optional[float] = None

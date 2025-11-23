@@ -38,7 +38,8 @@ class SkycamEventList extends HTMLElement {
             if (this.filter && this.filter !== 'all') params.type = this.filter;
             if (this.hasAttribute('limit')) params.limit = this.getAttribute('limit');
 
-            this.events = await apiService.getEvents(params);
+            const response = await apiService.getEvents(params);
+            this.events = Array.isArray(response) ? response : (response.events || []);
             this.renderEvents();
         } catch (error) {
             console.error('[EventList] Erro ao carregar eventos:', error);

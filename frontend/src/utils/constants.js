@@ -16,7 +16,7 @@ export const API_BASE_URL = window.ENV?.API_BASE_URL || 'http://localhost:8000';
 /**
  * URL do WebSocket
  */
-export const WS_URL = window.ENV?.WS_URL || 'ws://localhost:8000/ws';
+export const WS_URL = window.ENV?.WS_URL || 'ws://localhost:8000/api/v1/stream/ws';
 
 /**
  * Timeout padrao para requisicoes HTTP (ms)

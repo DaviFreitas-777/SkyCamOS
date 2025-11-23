@@ -132,7 +132,7 @@ async def create_initial_data() -> None:
 
             admin = User(
                 username="admin",
-                email="admin@skycamos.local",
+                email="admin@skycamos.com",
                 hashed_password=get_password_hash("admin123"),
                 full_name="Administrador",
                 is_active=True,

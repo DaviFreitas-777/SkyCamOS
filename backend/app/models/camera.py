@@ -187,3 +187,8 @@ class Camera(Base):
     def is_online(self) -> bool:
         """Verifica se a camera esta online."""
         return self.status in (CameraStatus.ONLINE.value, CameraStatus.RECORDING.value)
+
+    @property
+    def stream_url(self) -> str:
+        """Retorna a URL de streaming MJPEG do backend."""
+        return f"/api/v1/stream/{self.id}/mjpeg"

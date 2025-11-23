@@ -6,7 +6,7 @@ Este pacote contem as rotas e endpoints da API REST.
 
 from fastapi import APIRouter
 
-from app.api.routes import auth, cameras, events, recordings, stream
+from app.api.routes import analytics, auth, cameras, events, notifications, recordings, settings, stream
 
 # Router principal da API
 api_router = APIRouter()
@@ -40,4 +40,22 @@ api_router.include_router(
     stream.router,
     prefix="/stream",
     tags=["Streaming"],
+)
+
+api_router.include_router(
+    notifications.router,
+    prefix="/notifications",
+    tags=["Notificacoes"],
+)
+
+api_router.include_router(
+    settings.router,
+    prefix="/settings",
+    tags=["Configuracoes"],
+)
+
+api_router.include_router(
+    analytics.router,
+    prefix="/analytics",
+    tags=["Analytics"],
 )

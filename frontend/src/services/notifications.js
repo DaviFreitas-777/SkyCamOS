@@ -45,7 +45,7 @@ class NotificationService {
      */
     async loadVapidKey() {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/notifications/vapid-key`);
+            const response = await fetch(`${API_BASE_URL}/api/v1/notifications/vapid-key`);
             if (response.ok) {
                 const data = await response.json();
                 this.vapidPublicKey = data.publicKey;
@@ -172,7 +172,7 @@ class NotificationService {
         }
 
         try {
-            await fetch(`${API_BASE_URL}/api/notifications/subscribe`, {
+            await fetch(`${API_BASE_URL}/api/v1/notifications/subscribe`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -197,7 +197,7 @@ class NotificationService {
         }
 
         try {
-            await fetch(`${API_BASE_URL}/api/notifications/unsubscribe`, {
+            await fetch(`${API_BASE_URL}/api/v1/notifications/unsubscribe`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`

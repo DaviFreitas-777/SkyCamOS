@@ -28,7 +28,7 @@ class UserBase(BaseModel):
     email: EmailStr = Field(
         ...,
         description="Email do usuario",
-        examples=["admin@skycamos.local"]
+        examples=["admin@skycamos.com"]
     )
     full_name: Optional[str] = Field(
         None,

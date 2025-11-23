@@ -12,7 +12,7 @@ window.ENV = window.ENV || {};
 if (!window.ENV.API_BASE_URL) {
     // Usar valores padrao para desenvolvimento
     window.ENV.API_BASE_URL = 'http://localhost:8000';
-    window.ENV.WS_URL = 'ws://localhost:8000/ws';
+    window.ENV.WS_URL = 'ws://localhost:8000/api/v1/stream/ws';
 }
 
 /**

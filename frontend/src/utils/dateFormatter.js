@@ -404,6 +404,35 @@ export function getDateRange(start, end) {
 }
 
 /**
+ * Formatar duracao em formato curto
+ * @param {number} seconds - Duracao em segundos
+ * @returns {string} Duracao formatada (ex: "1h 30m")
+ */
+export function formatDuration(seconds) {
+    if (!seconds || seconds < 0) return '0s';
+
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    const parts = [];
+
+    if (hours > 0) {
+        parts.push(`${hours}h`);
+    }
+
+    if (minutes > 0) {
+        parts.push(`${minutes}m`);
+    }
+
+    if (secs > 0 || parts.length === 0) {
+        parts.push(`${secs}s`);
+    }
+
+    return parts.join(' ');
+}
+
+/**
  * Formatar duracao em formato legivel
  * @param {number} seconds - Duracao em segundos
  * @returns {string}

@@ -29,15 +29,10 @@ echo.
 
 echo [2/3] Verificando banco de dados...
 echo.
-cd /d "%~dp0..\database\scripts"
-if not exist "..\skycamos.db" (
-    echo Banco de dados nao encontrado. Criando...
-    py init_db.py
-    if errorlevel 1 (
-        echo [ERRO] Falha ao criar banco de dados
-        pause
-        exit /b 1
-    )
+cd /d "%~dp0"
+if not exist "data" mkdir data
+if not exist "data\skycamos.db" (
+    echo Banco de dados sera criado automaticamente ao iniciar
 ) else (
     echo [OK] Banco de dados ja existe
 )

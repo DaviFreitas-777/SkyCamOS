@@ -87,10 +87,10 @@ class CameraManager {
 
             // Buscar do servidor
             const cameras = await apiService.getCameras();
-            this.cameras = cameras;
+            this.cameras = Array.isArray(cameras) ? cameras : [];
 
             // Salvar no cache
-            await storageService.cacheCameras(cameras);
+            await storageService.cacheCameras(this.cameras);
 
             this.loading = false;
             this.notify();
@@ -307,6 +307,34 @@ class CameraManager {
     }
 
     /**
+     * Descobrir cameras ONVIF na rede
+     * @returns {Promise<Array>}
+     */
+    async discoverCameras() {
+        try {
+            const discovered = await apiService.discoverCameras();
+            return discovered || [];
+        } catch (error) {
+            console.error('[Camera] Erro na descoberta:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Testar conexao com camera
+     * @param {Object} data - Dados de conexao
+     * @returns {Promise<Object>}
+     */
+    async testConnection(data) {
+        try {
+            return await apiService.testCameraConnection(data);
+        } catch (error) {
+            console.error('[Camera] Erro ao testar conexao:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Registrar listener para mudancas
      * @param {Function} callback - Funcao callback
      * @returns {Function} - Funcao para remover listener
@@ -387,6 +415,8 @@ export function useCamera() {
         getOfflineCameras: cameraManager.getOfflineCameras.bind(cameraManager),
         getCamerasByGroup: cameraManager.getCamerasByGroup.bind(cameraManager),
         getGroups: cameraManager.getGroups.bind(cameraManager),
+        discoverCameras: cameraManager.discoverCameras.bind(cameraManager),
+        testConnection: cameraManager.testConnection.bind(cameraManager),
         subscribe: cameraManager.subscribe.bind(cameraManager),
         getState: cameraManager.getState.bind(cameraManager),
         reset: cameraManager.reset.bind(cameraManager)

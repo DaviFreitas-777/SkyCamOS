@@ -3,7 +3,8 @@
  * Player de video com suporte a HLS e WebRTC
  */
 
-import { VIDEO_CONFIG } from '../utils/constants.js';
+import { VIDEO_CONFIG, API_BASE_URL } from '../utils/constants.js';
+import { authService } from '../services/auth.js';
 
 /**
  * Web Component do VideoPlayer
@@ -286,6 +287,8 @@ class SkycamVideoPlayer extends HTMLElement {
                 await this.loadHLS();
             } else if (this.src.includes('webrtc')) {
                 await this.loadWebRTC();
+            } else if (this.src.includes('/mjpeg')) {
+                await this.loadMJPEG();
             } else {
                 await this.loadNative();
             }
@@ -391,13 +394,59 @@ class SkycamVideoPlayer extends HTMLElement {
     }
 
     /**
-     * Carregar video nativo (MJPEG, etc)
+     * Carregar stream MJPEG
+     */
+    async loadMJPEG() {
+        const video = this.querySelector('.video-player');
+        if (!video) return;
+
+        // Construir URL com token
+        let url = this.src;
+        if (url.startsWith('/api/')) {
+            const token = authService.getToken();
+            const baseUrl = API_BASE_URL || window.location.origin.replace(':3000', ':8000');
+            url = `${baseUrl}${url}${url.includes('?') ? '&' : '?'}token=${token}`;
+        }
+
+        // MJPEG funciona melhor com img do que video
+        // Substituir video por img
+        const wrapper = this.querySelector('.video-player-wrapper');
+        const img = document.createElement('img');
+        img.className = 'video-player mjpeg-stream';
+        img.src = url;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+
+        img.onload = () => {
+            this.hideLoading();
+            this.isPlaying = true;
+        };
+
+        img.onerror = () => {
+            this.handleError();
+        };
+
+        video.style.display = 'none';
+        wrapper.insertBefore(img, video);
+    }
+
+    /**
+     * Carregar video nativo (outros formatos)
      */
     async loadNative() {
         const video = this.querySelector('.video-player');
         if (!video) return;
 
-        video.src = this.src;
+        // Se for URL relativa do backend, adicionar base URL e token
+        let url = this.src;
+        if (url.startsWith('/api/')) {
+            const token = authService.getToken();
+            const baseUrl = API_BASE_URL || window.location.origin.replace(':3000', ':8000');
+            url = `${baseUrl}${url}${url.includes('?') ? '&' : '?'}token=${token}`;
+        }
+
+        video.src = url;
         await video.play();
     }
 
