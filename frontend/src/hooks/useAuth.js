@@ -28,7 +28,8 @@ class AuthManager {
             return authService.isAuthenticated();
         }
 
-        await authService.loadFromStorage();
+        // Aguardar o authService terminar de carregar do storage
+        await authService.waitForInit();
         this.initialized = true;
         return authService.isAuthenticated();
     }

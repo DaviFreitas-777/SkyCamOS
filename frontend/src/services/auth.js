@@ -15,9 +15,19 @@ class AuthService {
         this.user = null;
         this.refreshTimer = null;
         this.listeners = new Set();
+        this.initialized = false;
 
-        // Carregar dados persistidos
-        this.loadFromStorage();
+        // Carregar dados persistidos (promise para aguardar inicializacao)
+        this.initPromise = this.loadFromStorage();
+    }
+
+    /**
+     * Aguardar inicializacao do servico
+     * @returns {Promise<void>}
+     */
+    async waitForInit() {
+        if (this.initialized) return;
+        await this.initPromise;
     }
 
     /**
@@ -41,6 +51,9 @@ class AuthService {
             }
         } catch (error) {
             console.error('[Auth] Erro ao carregar do storage:', error);
+        } finally {
+            this.initialized = true;
+            console.log('[Auth] Servico inicializado');
         }
     }
 
