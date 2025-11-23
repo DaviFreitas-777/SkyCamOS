@@ -2,18 +2,20 @@
 Servico de Gravacao do SkyCamOS.
 
 Este modulo implementa a gravacao continua e por eventos
-de streams de cameras IP.
+de streams de cameras IP usando FFmpeg com copy codec
+para evitar re-encoding e economizar espaco/CPU.
 """
 
 import asyncio
 import logging
 import os
+import subprocess
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import cv2
-import numpy as np
 
 from app.config import settings
 from app.models.camera import Camera
@@ -22,11 +24,14 @@ from app.models.recording import Recording, RecordingStatus, RecordingType
 logger = logging.getLogger(__name__)
 
 
-class CameraRecorder:
+class FFmpegRecorder:
     """
-    Gravador para uma camera individual.
+    Gravador usando FFmpeg com copy codec.
 
-    Gerencia a captura e gravacao do stream de uma camera.
+    Salva o stream H.264 bruto sem re-encoding para:
+    - Arquivos menores
+    - Menor uso de CPU
+    - Sem perda de qualidade
     """
 
     def __init__(
@@ -51,15 +56,10 @@ class CameraRecorder:
         self.segment_duration = segment_duration
 
         self._is_recording = False
-        self._capture: Optional[cv2.VideoCapture] = None
-        self._writer: Optional[cv2.VideoWriter] = None
+        self._process: Optional[subprocess.Popen] = None
         self._current_recording: Optional[dict] = None
         self._task: Optional[asyncio.Task] = None
         self._stop_event = asyncio.Event()
-
-        # Estatisticas
-        self._frames_recorded = 0
-        self._bytes_written = 0
         self._start_time: Optional[datetime] = None
 
     @property
@@ -67,9 +67,25 @@ class CameraRecorder:
         """Retorna se esta gravando."""
         return self._is_recording
 
+    def _get_ffmpeg_path(self) -> str:
+        """Retorna o caminho do FFmpeg."""
+        # Tenta encontrar FFmpeg no PATH
+        ffmpeg = shutil.which("ffmpeg")
+        if ffmpeg:
+            return ffmpeg
+        # Windows: tenta locais comuns
+        common_paths = [
+            "C:\\ffmpeg\\bin\\ffmpeg.exe",
+            "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe",
+        ]
+        for path in common_paths:
+            if os.path.exists(path):
+                return path
+        return "ffmpeg"  # Tenta usar do PATH
+
     async def start(self) -> bool:
         """
-        Inicia a gravacao.
+        Inicia a gravacao usando FFmpeg.
 
         Returns:
             bool: True se iniciou com sucesso.
@@ -78,31 +94,24 @@ class CameraRecorder:
             logger.warning(f"Camera {self.camera_id} ja esta gravando")
             return False
 
-        logger.info(f"Iniciando gravacao da camera {self.camera_id}")
+        logger.info(f"Iniciando gravacao FFmpeg da camera {self.camera_id}")
 
         try:
-            # Abre captura RTSP
-            self._capture = cv2.VideoCapture(self.rtsp_url)
-
-            if not self._capture.isOpened():
-                logger.error(f"Falha ao abrir stream: {self.rtsp_url}")
-                return False
-
-            # Configura parametros de captura
-            self._capture.set(cv2.CAP_PROP_BUFFERSIZE, settings.rtsp_buffer_size)
+            # Garante que o diretorio existe
+            self.output_dir.mkdir(parents=True, exist_ok=True)
 
             self._is_recording = True
             self._stop_event.clear()
             self._start_time = datetime.utcnow()
 
-            # Inicia task de gravacao
+            # Inicia task de gravacao em segmentos
             self._task = asyncio.create_task(self._recording_loop())
 
-            logger.info(f"Gravacao iniciada para camera {self.camera_id}")
+            logger.info(f"Gravacao FFmpeg iniciada para camera {self.camera_id}")
             return True
 
         except Exception as e:
-            logger.error(f"Erro ao iniciar gravacao: {e}")
+            logger.error(f"Erro ao iniciar gravacao FFmpeg: {e}")
             await self.stop()
             return False
 
@@ -116,10 +125,27 @@ class CameraRecorder:
         if not self._is_recording:
             return None
 
-        logger.info(f"Parando gravacao da camera {self.camera_id}")
+        logger.info(f"Parando gravacao FFmpeg da camera {self.camera_id}")
 
         self._is_recording = False
         self._stop_event.set()
+
+        # Para processo FFmpeg
+        if self._process and self._process.poll() is None:
+            try:
+                # Envia 'q' para FFmpeg parar graciosamente
+                self._process.stdin.write(b'q')
+                self._process.stdin.flush()
+                await asyncio.sleep(1)
+            except Exception:
+                pass
+
+            if self._process.poll() is None:
+                self._process.terminate()
+                try:
+                    self._process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    self._process.kill()
 
         # Aguarda task finalizar
         if self._task:
@@ -128,15 +154,6 @@ class CameraRecorder:
             except asyncio.TimeoutError:
                 self._task.cancel()
 
-        # Libera recursos
-        if self._writer:
-            self._writer.release()
-            self._writer = None
-
-        if self._capture:
-            self._capture.release()
-            self._capture = None
-
         # Retorna info da ultima gravacao
         recording_info = self._current_recording
         self._current_recording = None
@@ -144,98 +161,101 @@ class CameraRecorder:
         return recording_info
 
     async def _recording_loop(self) -> None:
-        """Loop principal de gravacao."""
-        segment_start = datetime.utcnow()
-        frames_in_segment = 0
-
+        """Loop principal de gravacao em segmentos."""
         while self._is_recording and not self._stop_event.is_set():
             try:
-                # Verifica se precisa criar novo segmento
-                elapsed = (datetime.utcnow() - segment_start).total_seconds()
-                if elapsed >= self.segment_duration or self._writer is None:
-                    await self._start_new_segment()
-                    segment_start = datetime.utcnow()
-                    frames_in_segment = 0
+                await self._start_new_segment()
 
-                # Captura frame
-                ret, frame = self._capture.read()
+                # Aguarda segmento terminar ou stop event
+                segment_task = asyncio.create_task(self._wait_for_segment())
+                stop_task = asyncio.create_task(self._stop_event.wait())
 
-                if not ret:
-                    logger.warning(f"Falha ao ler frame da camera {self.camera_id}")
-                    await asyncio.sleep(0.1)
+                done, pending = await asyncio.wait(
+                    [segment_task, stop_task],
+                    return_when=asyncio.FIRST_COMPLETED
+                )
 
-                    # Tenta reconectar
-                    self._capture.release()
-                    self._capture = cv2.VideoCapture(self.rtsp_url)
-                    continue
+                for task in pending:
+                    task.cancel()
 
-                # Grava frame
-                if self._writer:
-                    self._writer.write(frame)
-                    self._frames_recorded += 1
-                    frames_in_segment += 1
-
-                # Pequena pausa para nao sobrecarregar CPU
-                await asyncio.sleep(0.001)
+                # Se parou, finaliza segmento
+                if self._stop_event.is_set():
+                    await self._finalize_segment()
+                    break
 
             except asyncio.CancelledError:
                 break
             except Exception as e:
-                logger.error(f"Erro no loop de gravacao: {e}")
+                logger.error(f"Erro no loop de gravacao FFmpeg: {e}")
+                await asyncio.sleep(5)
+
+    async def _wait_for_segment(self) -> None:
+        """Aguarda o segmento atual terminar."""
+        if self._process:
+            while self._process.poll() is None:
                 await asyncio.sleep(1)
 
-        # Finaliza segmento atual
-        await self._finalize_segment()
-
     async def _start_new_segment(self) -> None:
-        """Inicia um novo segmento de gravacao."""
+        """Inicia um novo segmento de gravacao com FFmpeg."""
         # Finaliza segmento anterior
         await self._finalize_segment()
 
-        # Gera nome do arquivo
+        # Gera nome do arquivo (MKV para melhor compatibilidade com raw H.264)
         timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-        filename = f"camera_{self.camera_id}_{timestamp}.mp4"
+        filename = f"camera_{self.camera_id}_{timestamp}.mkv"
         filepath = self.output_dir / filename
 
-        # Garante que o diretorio existe
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        ffmpeg_path = self._get_ffmpeg_path()
 
-        # Obtem propriedades do video
-        fps = self._capture.get(cv2.CAP_PROP_FPS) or 25
-        width = int(self._capture.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(self._capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # Comando FFmpeg com copy codec (sem re-encoding)
+        cmd = [
+            ffmpeg_path,
+            "-hide_banner",
+            "-loglevel", "error",
+            "-rtsp_transport", "tcp",
+            "-use_wallclock_as_timestamps", "1",
+            "-i", self.rtsp_url,
+            "-c:v", "copy",  # Copia video sem re-encoding
+            "-c:a", "copy",  # Copia audio sem re-encoding
+            "-t", str(self.segment_duration),  # Duracao do segmento
+            "-y",  # Sobrescreve se existir
+            str(filepath)
+        ]
 
-        # Cria writer
-        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-        self._writer = cv2.VideoWriter(
-            str(filepath),
-            fourcc,
-            fps,
-            (width, height),
-        )
+        logger.info(f"Iniciando segmento FFmpeg: {filename}")
+
+        try:
+            self._process = subprocess.Popen(
+                cmd,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except FileNotFoundError:
+            logger.error("FFmpeg nao encontrado! Instale FFmpeg no sistema.")
+            self._is_recording = False
+            return
 
         self._current_recording = {
             "camera_id": self.camera_id,
             "filename": filename,
             "filepath": str(filepath),
             "start_time": datetime.utcnow(),
-            "resolution": f"{width}x{height}",
-            "fps": int(fps),
-            "codec": "mp4v",
+            "codec": "copy (H.264)",
+            "format": "mkv",
         }
-
-        logger.info(f"Novo segmento iniciado: {filename}")
 
     async def _finalize_segment(self) -> None:
         """Finaliza o segmento atual."""
-        if self._writer is None:
-            return
-
-        self._writer.release()
-        self._writer = None
+        if self._process and self._process.poll() is None:
+            try:
+                self._process.stdin.write(b'q')
+                self._process.stdin.flush()
+            except Exception:
+                pass
+            self._process.wait(timeout=10)
 
         if self._current_recording:
-            # Atualiza info do segmento
             filepath = Path(self._current_recording["filepath"])
             self._current_recording["end_time"] = datetime.utcnow()
             self._current_recording["duration_seconds"] = (
@@ -245,11 +265,15 @@ class CameraRecorder:
 
             if filepath.exists():
                 self._current_recording["file_size_bytes"] = filepath.stat().st_size
+                logger.info(
+                    f"Segmento finalizado: {self._current_recording['filename']} "
+                    f"({self._current_recording['duration_seconds']:.1f}s, "
+                    f"{self._current_recording['file_size_bytes'] / 1024 / 1024:.1f}MB)"
+                )
 
-            logger.info(
-                f"Segmento finalizado: {self._current_recording['filename']} "
-                f"({self._current_recording['duration_seconds']:.1f}s)"
-            )
+
+# Manter compatibilidade com CameraRecorder (alias)
+CameraRecorder = FFmpegRecorder
 
 
 class RecordingService:
@@ -261,7 +285,7 @@ class RecordingService:
 
     def __init__(self) -> None:
         """Inicializa o servico de gravacao."""
-        self._recorders: dict[int, CameraRecorder] = {}
+        self._recorders: dict[int, FFmpegRecorder] = {}
         self._recordings: list[dict] = []
         self._output_dir = settings.recordings_dir
 
@@ -293,8 +317,8 @@ class RecordingService:
         camera_dir = self._output_dir / f"camera_{camera.id}"
         camera_dir.mkdir(parents=True, exist_ok=True)
 
-        # Cria gravador
-        recorder = CameraRecorder(
+        # Cria gravador FFmpeg
+        recorder = FFmpegRecorder(
             camera_id=camera.id,
             rtsp_url=camera.rtsp_full_url,
             output_dir=camera_dir,
@@ -370,7 +394,6 @@ class RecordingService:
         return {
             "camera_id": camera_id,
             "is_recording": recorder.is_recording,
-            "frames_recorded": recorder._frames_recorded,
             "started_at": recorder._start_time.isoformat() if recorder._start_time else None,
         }
 
@@ -414,6 +437,52 @@ class RecordingService:
         except Exception as e:
             logger.error(f"Erro ao capturar snapshot: {e}")
             return None
+
+    async def export_to_mp4(
+        self,
+        source_path: Path,
+        output_path: Optional[Path] = None,
+    ) -> Optional[Path]:
+        """
+        Exporta gravacao MKV para MP4.
+
+        Usado quando usuario quer baixar um trecho especifico.
+
+        Args:
+            source_path: Caminho do arquivo MKV.
+            output_path: Caminho de saida (opcional).
+
+        Returns:
+            Optional[Path]: Caminho do arquivo MP4 ou None se falhar.
+        """
+        if not source_path.exists():
+            return None
+
+        if output_path is None:
+            output_path = source_path.with_suffix(".mp4")
+
+        ffmpeg_path = shutil.which("ffmpeg") or "ffmpeg"
+
+        cmd = [
+            ffmpeg_path,
+            "-hide_banner",
+            "-loglevel", "error",
+            "-i", str(source_path),
+            "-c:v", "copy",
+            "-c:a", "aac",  # Converte audio para AAC (compativel com MP4)
+            "-y",
+            str(output_path)
+        ]
+
+        try:
+            result = subprocess.run(cmd, capture_output=True, timeout=300)
+            if result.returncode == 0 and output_path.exists():
+                logger.info(f"Exportado para MP4: {output_path}")
+                return output_path
+        except Exception as e:
+            logger.error(f"Erro ao exportar para MP4: {e}")
+
+        return None
 
 
 # Instancia global do servico
