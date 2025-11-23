@@ -115,33 +115,29 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 4. Configurar o Banco de Dados
+### 4. Executar o Sistema
 
 ```bash
-py scripts/setup_database.py
+# Terminal 1 - Backend (porta 8000)
+cd backend
+py -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Terminal 2 - Frontend (porta 3000)
+cd frontend
+npx serve public -l 3000
+
+# Opcional - Desktop Manager (CLI)
+cd desktop
+py run.py
 ```
 
-### 5. Configuracao Inicial
+> O banco de dados SQLite e criado automaticamente na primeira execucao
 
-Copie o arquivo de configuracao exemplo e edite conforme necessario:
+### 5. Acessar a Interface Web
 
-```bash
-cp config.example.yaml config.yaml
-```
-
-### 6. Executar o Sistema
-
-```bash
-# Iniciar backend
-py -m uvicorn main:app --host 0.0.0.0 --port 8000
-
-# Em outro terminal, iniciar o desktop manager (opcional)
-py desktop_manager.py
-```
-
-### 7. Acessar a Interface Web
-
-Abra o navegador em: `http://localhost:8000`
+- **Local:** `http://localhost:3000`
+- **Rede Local:** `http://SEU-IP:3000`
+- **Credenciais:** `admin / admin123`
 
 ---
 
@@ -292,28 +288,28 @@ git push origin feature/minha-feature
 
 ## Roadmap
 
-### Versao 1.0 (MVP)
+### Versao 1.0 (MVP) - Concluida
 
 - [x] Estrutura inicial do projeto
-- [ ] Descoberta de cameras ONVIF/SSDP
-- [ ] Visualizacao ao vivo (HLS)
-- [ ] Gravacao local
-- [ ] Interface web basica
-- [ ] PWA instalavel
+- [x] Descoberta de cameras ONVIF/SSDP
+- [x] Visualizacao ao vivo (MJPEG/WebSocket)
+- [x] Gravacao local
+- [x] Interface web basica (Dashboard, Login, Recordings, Events, Settings)
+- [x] PWA instalavel (manifest.json, Service Worker)
 
-### Versao 1.1
+### Versao 1.1 - Em Progresso
 
 - [ ] WebRTC para baixa latencia
-- [ ] Deteccao de movimento por software
-- [ ] Notificacoes push
-- [ ] Timeline de gravacoes
+- [x] Deteccao de movimento por software (OpenCV MOG2)
+- [x] Notificacoes push (Service Worker + Backend)
+- [x] Timeline de gravacoes
 
-### Versao 2.0
+### Versao 2.0 - Parcialmente Implementada
 
-- [ ] Deteccao de pessoas com IA
+- [x] Deteccao de pessoas com IA (MobileNet SSD/HOG)
 - [ ] Integracao com assistentes de voz
 - [ ] Modo cloud (opcional)
-- [ ] Line crossing detection
+- [x] Line crossing detection
 
 ---
 
@@ -348,10 +344,10 @@ copies or substantial portions of the Software.
 ### Tecnologias Utilizadas
 
 - [Python](https://www.python.org/) - Linguagem principal do backend
-- [FastAPI](https://fastapi.tiangolo.com/) - Framework web assíncrono
-- [FFmpeg](https://ffmpeg.org/) - Processamento de video
-- [SQLite](https://www.sqlite.org/) - Banco de dados embarcado
-- [Vue.js](https://vuejs.org/) / [React](https://react.dev/) - Frontend PWA
+- [FastAPI](https://fastapi.tiangolo.com/) - Framework web assincrono
+- [OpenCV](https://opencv.org/) - Processamento de video e deteccao de movimento
+- [SQLite](https://www.sqlite.org/) - Banco de dados embarcado (SQLAlchemy async)
+- [Vanilla JS](https://developer.mozilla.org/pt-BR/docs/Web/JavaScript) - Frontend PWA (ES Modules)
 
 ### Agradecimentos
 
