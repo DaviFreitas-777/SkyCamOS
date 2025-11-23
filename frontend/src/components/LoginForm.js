@@ -137,7 +137,10 @@ class SkycamLoginForm extends HTMLElement {
 
                 await this.auth.login(username, password);
                 this.notifications.success('Login realizado com sucesso!');
-                // Redirecionamento e feito automaticamente pelo handleAuthChange no App.js
+                // Força redirect para dashboard (fallback caso handleAuthChange falhe)
+                setTimeout(() => {
+                    window.location.hash = '#/dashboard';
+                }, 100);
                 return; // Sair apos login bem sucedido
             } else {
                 const email = this.querySelector('#email').value;

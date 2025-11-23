@@ -115,7 +115,12 @@ class StorageService {
 
         // Tentar IndexedDB primeiro
         if (this.db) {
-            return this.setIndexedDB(key, value);
+            try {
+                return await this.setIndexedDB(key, value);
+            } catch (error) {
+                console.warn('[Storage] IndexedDB falhou, usando localStorage:', error);
+                // Fallback para localStorage
+            }
         }
 
         // Fallback para localStorage
@@ -138,7 +143,12 @@ class StorageService {
 
         // Tentar IndexedDB primeiro
         if (this.db) {
-            return this.getIndexedDB(key);
+            try {
+                return await this.getIndexedDB(key);
+            } catch (error) {
+                console.warn('[Storage] IndexedDB get falhou, usando localStorage:', error);
+                // Fallback para localStorage
+            }
         }
 
         // Fallback para localStorage
