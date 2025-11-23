@@ -105,9 +105,9 @@ app = FastAPI(
     Inclua o token no header `Authorization: Bearer <token>` nas requisicoes.
     """,
     version=__version__,
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
-    openapi_url="/openapi.json" if settings.debug else "/api/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
     lifespan=lifespan,
 )
 

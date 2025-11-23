@@ -261,6 +261,31 @@ class SkycamHeader extends HTMLElement {
                     display: none;
                 }
             }
+
+            @media (max-width: 480px) {
+                .header {
+                    padding: 0 var(--spacing-sm);
+                }
+
+                .header-left,
+                .header-right {
+                    gap: var(--spacing-xs);
+                }
+
+                .header-logo-icon {
+                    width: 24px;
+                    height: 24px;
+                }
+
+                .header-user-button {
+                    padding: var(--spacing-xs);
+                }
+
+                .avatar-sm {
+                    width: 28px;
+                    height: 28px;
+                }
+            }
         `;
 
         document.head.appendChild(styles);

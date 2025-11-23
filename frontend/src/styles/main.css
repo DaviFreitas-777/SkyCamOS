@@ -340,6 +340,16 @@ table {
     animation: scaleIn var(--transition-normal);
 }
 
+@media (max-width: 768px) {
+    .modal-content {
+        max-width: 95vw;
+        max-height: 85vh;
+        padding: var(--spacing-md);
+        border-radius: var(--radius-lg);
+        margin: var(--spacing-sm);
+    }
+}
+
 /* === Animacoes === */
 @keyframes spin {
     to { transform: rotate(360deg); }
@@ -442,9 +452,10 @@ table {
     }
 
     .toast-container {
-        top: auto;
-        bottom: calc(var(--bottom-nav-height) + var(--spacing-md));
+        top: calc(var(--header-height) + var(--spacing-sm));
+        bottom: auto;
         left: var(--spacing-md);
         right: var(--spacing-md);
+        max-width: calc(100% - 32px);
     }
 }

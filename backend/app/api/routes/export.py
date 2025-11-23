@@ -284,8 +284,8 @@ async def delete_export(
     description="Remove arquivos de exportacao mais antigos que o especificado.",
 )
 async def cleanup_exports(
-    max_age_hours: int = Query(default=24, ge=1, le=168),
     current_user: Annotated[User, Depends(get_current_active_user)],
+    max_age_hours: int = Query(default=24, ge=1, le=168),
 ) -> dict:
     """Remove exportacoes antigas."""
     if current_user.role != "admin":

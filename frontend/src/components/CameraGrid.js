@@ -263,6 +263,10 @@ class SkycamCameraGrid extends HTMLElement {
                     gap: var(--spacing-sm);
                 }
 
+                .camera-grid {
+                    min-height: 200px;
+                }
+
                 .camera-grid.grid-2x2,
                 .camera-grid.grid-3x3,
                 .camera-grid.grid-4x4 {

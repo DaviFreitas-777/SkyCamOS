@@ -57,15 +57,15 @@ class SkycamLoginForm extends HTMLElement {
         return `
             <div class="input-group">
                 <label class="input-label" for="username">Usuario ou Email</label>
-                <input type="text" class="input" id="username" name="username" required autocomplete="username" placeholder="Digite seu usuario">
+                <input type="text" class="input" id="username" name="username" required autocomplete="username" inputmode="email" placeholder="Digite seu usuario">
             </div>
             <div class="input-group">
                 <label class="input-label" for="password">Senha</label>
                 <input type="password" class="input" id="password" name="password" required autocomplete="current-password" placeholder="Digite sua senha">
             </div>
-            <div class="checkbox-group">
+            <div class="checkbox-group touch-target">
                 <input type="checkbox" class="checkbox" id="remember" name="remember">
-                <label for="remember">Lembrar de mim</label>
+                <label for="remember" class="checkbox-label">Lembrar de mim</label>
             </div>
         `;
     }
@@ -96,6 +96,18 @@ class SkycamLoginForm extends HTMLElement {
             .login-subtitle { color: var(--color-text-secondary); }
             .login-form { display: flex; flex-direction: column; gap: var(--spacing-md); }
             .login-footer { margin-top: var(--spacing-md); text-align: center; }
+
+            @media (max-width: 480px) {
+                .login-form-wrapper {
+                    padding: var(--spacing-md);
+                    margin: var(--spacing-sm);
+                    max-width: calc(100% - var(--spacing-md));
+                    border-radius: var(--radius-lg);
+                }
+                .login-header { margin-bottom: var(--spacing-lg); }
+                .login-logo { width: 48px; height: 48px; }
+                .login-title { font-size: var(--font-size-xl); }
+            }
         `;
         document.head.appendChild(styles);
     }
@@ -140,7 +152,7 @@ class SkycamLoginForm extends HTMLElement {
                 // Força redirect para dashboard (fallback caso handleAuthChange falhe)
                 setTimeout(() => {
                     window.location.hash = '#/dashboard';
-                }, 100);
+                }, 500);
                 return; // Sair apos login bem sucedido
             } else {
                 const email = this.querySelector('#email').value;

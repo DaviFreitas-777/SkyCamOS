@@ -14,6 +14,7 @@ import './pages/Recordings.js';
 import './pages/Events.js';
 import './pages/Settings.js';
 import './pages/Login.js';
+import './pages/Export.js';
 
 // Importar servicos
 import { useAuth } from './hooks/useAuth.js';
@@ -32,7 +33,7 @@ class SkyCamApp {
         this.sidebarCollapsed = false;
 
         // Rotas protegidas
-        this.protectedRoutes = ['/dashboard', '/recordings', '/events', '/settings'];
+        this.protectedRoutes = ['/dashboard', '/recordings', '/events', '/settings', '/export'];
 
         // Rotas publicas
         this.publicRoutes = ['/login'];
@@ -169,6 +170,10 @@ class SkyCamApp {
             case path.startsWith('/settings/'):
                 pageComponent = '<page-settings></page-settings>';
                 break;
+            case path === '/export':
+            case path.startsWith('/export/'):
+                pageComponent = '<skycam-export-page></skycam-export-page>';
+                break;
             default:
                 pageComponent = '<page-dashboard></page-dashboard>';
         }
@@ -185,10 +190,11 @@ class SkyCamApp {
             // Usuario logou
             this.ws.connect();
             if (this.currentRoute === '/login' || !this.currentRoute) {
+                this.currentRoute = '/dashboard';
                 window.location.hash = '#/dashboard';
-            } else {
-                this.render();
             }
+            // Sempre re-renderizar para mostrar o layout completo
+            this.render();
         } else {
             // Usuario deslogou
             this.ws.disconnect();
@@ -481,7 +487,7 @@ class SkyCamApp {
                 border: 1px solid var(--border-color);
                 border-radius: var(--radius-sm);
                 margin-bottom: var(--spacing-xs);
-                background: ${cam.is_accessible ? 'var(--success-bg)' : 'var(--surface-secondary)'};
+                background: ${cam.is_accessible ? 'var(--color-success-bg)' : 'var(--color-bg-secondary)'};
             ">
                 <input type="checkbox" id="cam-${index}" ${cam.is_accessible ? 'checked' : ''} style="margin-right: var(--spacing-sm);">
                 <div style="flex: 1;">
@@ -495,7 +501,7 @@ class SkyCamApp {
                     padding: 2px 8px;
                     border-radius: 4px;
                     font-size: 0.75rem;
-                    background: ${cam.is_accessible ? 'var(--success)' : 'var(--warning)'};
+                    background: ${cam.is_accessible ? 'var(--color-success)' : 'var(--color-warning)'};
                     color: white;
                 ">${cam.is_accessible ? 'Online' : 'Verificar'}</span>
             </div>

@@ -482,3 +482,16 @@ debug/
 *.tfstate.*
 .terraform/
 .terraform.lock.hcl
+
+# ==============================================================================
+# MCP e Ferramentas de Desenvolvimento
+# ==============================================================================
+
+# MCP config files with API keys
+mcp_config*.json
+
+# Playwright screenshots
+.playwright-mcp/
+
+# Windows error files
+nul

@@ -144,6 +144,7 @@ export const ROUTES = {
     DASHBOARD: '/dashboard',
     RECORDINGS: '/recordings',
     EVENTS: '/events',
+    EXPORT: '/export',
     SETTINGS: '/settings',
     CAMERA: '/camera/:id',
     EVENT_DETAIL: '/events/:id'
@@ -174,6 +175,13 @@ export const MENU_ITEMS = [
         icon: 'bell',
         route: ROUTES.EVENTS,
         permission: 'events.view'
+    },
+    {
+        id: 'export',
+        label: 'Exportar',
+        icon: 'download',
+        route: ROUTES.EXPORT,
+        permission: 'recordings.export'
     },
     {
         id: 'settings',

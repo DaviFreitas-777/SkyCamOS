@@ -297,7 +297,9 @@ class ApiService {
      * @returns {Promise<Array>}
      */
     async getCameras() {
-        return this.get('/api/v1/cameras');
+        const response = await this.get('/api/v1/cameras');
+        // API retorna { items: [...], total, page, ... }
+        return response.items || response;
     }
 
     /**
@@ -423,7 +425,8 @@ class ApiService {
      * @returns {Promise<Array>}
      */
     async getRecordings(params = {}) {
-        return this.get('/api/v1/recordings', params);
+        const response = await this.get('/api/v1/recordings', params);
+        return response.items || response || [];
     }
 
     /**

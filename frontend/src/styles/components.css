@@ -17,6 +17,7 @@
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
+    min-height: 44px; /* Touch target WCAG */
 }
 
 .btn-sm {
@@ -144,10 +145,43 @@
     cursor: pointer;
 }
 
+/* Touch target wrapper para checkboxes */
+.checkbox-group.touch-target {
+    position: relative;
+    min-height: 44px;
+    padding: var(--spacing-sm) 0;
+}
+
+.checkbox-group.touch-target .checkbox-label {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding-left: var(--spacing-xs);
+    cursor: pointer;
+}
+
+/* Area clicavel expandida para checkbox */
+.checkbox-group.touch-target .checkbox {
+    position: relative;
+}
+
+.checkbox-group.touch-target .checkbox::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 44px;
+    height: 44px;
+    cursor: pointer;
+}
+
 .checkbox,
 .radio {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
     appearance: none;
     background-color: var(--color-bg-card);
     border: 2px solid var(--color-border-primary);
@@ -349,6 +383,19 @@
     margin: var(--spacing-xs) 0;
 }
 
+@media (max-width: 768px) {
+    .dropdown-menu {
+        left: auto;
+        right: 0;
+        max-width: calc(100vw - 32px);
+        min-width: 160px;
+    }
+
+    .dropdown-item {
+        padding: var(--spacing-md);
+    }
+}
+
 /* === Tabs === */
 .tabs {
     display: flex;
@@ -484,6 +531,13 @@
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(-8px);
+}
+
+/* Desabilitar tooltips em dispositivos touch */
+@media (hover: none) {
+    .tooltip::after {
+        display: none;
+    }
 }
 
 /* === Grid de Cameras === */
@@ -704,5 +758,55 @@
     .tab {
         flex: 1;
         text-align: center;
+    }
+}
+
+/* === Touch Device Improvements === */
+@media (pointer: coarse) {
+    /* Botoes com min-height para touch */
+    .btn {
+        min-height: 48px;
+    }
+
+    .btn-sm {
+        min-height: 44px;
+    }
+
+    /* Checkboxes maiores para touch */
+    .checkbox,
+    .radio {
+        width: 24px;
+        height: 24px;
+        min-width: 24px;
+        min-height: 24px;
+    }
+
+    /* Inputs maiores para touch */
+    .input {
+        min-height: 48px;
+        font-size: 16px; /* Previne zoom no iOS */
+    }
+
+    /* Dropdown items com altura adequada */
+    .dropdown-item {
+        min-height: 44px;
+    }
+
+    /* Tabs com altura adequada */
+    .tab {
+        min-height: 44px;
+    }
+}
+
+/* === Mobile Keyboard Adjustments === */
+@media (max-width: 768px) {
+    /* Ajuste de padding quando teclado virtual esta ativo */
+    .login-form-wrapper {
+        padding-bottom: env(safe-area-inset-bottom, var(--spacing-xl));
+    }
+
+    /* Scroll suave para inputs em foco */
+    .input:focus {
+        scroll-margin-bottom: 150px;
     }
 }

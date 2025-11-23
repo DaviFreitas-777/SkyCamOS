@@ -133,7 +133,62 @@ py run.py
 
 > O banco de dados SQLite e criado automaticamente na primeira execucao
 
-### 5. Acessar a Interface Web
+### 6. Desktop Manager (Opcional)
+
+O Desktop Manager oferece uma interface CLI para gerenciamento do sistema, descoberta de cameras e monitoramento de disco.
+
+**Instalar dependencias do Desktop:**
+
+```bash
+cd desktop
+pip install -r requirements.txt
+```
+
+**Executar Desktop Manager:**
+
+```bash
+# Modo interativo (CLI)
+start-desktop.bat
+
+# Ou diretamente via Python
+python run.py
+
+# Modo minimizado (apenas tray)
+start-desktop-tray.bat
+
+# Ou via Python
+pythonw run.py --minimized
+```
+
+**Comandos disponiveis no CLI:**
+
+| Comando | Descricao |
+|---------|-----------|
+| `status` | Mostra status do backend, disco e cameras |
+| `cameras` | Lista cameras descobertas |
+| `discover` | Executa descoberta de cameras na rede |
+| `start` | Inicia o backend |
+| `stop` | Para o backend |
+| `restart` | Reinicia o backend |
+| `disk` | Mostra informacoes de armazenamento |
+| `cleanup` | Executa limpeza de gravacoes antigas |
+| `config` | Exibe configuracao atual |
+| `autostart` | Configura inicio automatico com Windows |
+| `help` | Exibe ajuda |
+| `quit` | Sai do programa |
+
+**Opcoes de linha de comando:**
+
+```bash
+python run.py --help        # Exibe ajuda
+python run.py --minimized   # Inicia minimizado (apenas system tray)
+python run.py --no-tray     # Desabilita icone na bandeja
+python run.py --debug       # Modo de debug (mais logs)
+python run.py --service     # Modo servico (sem interface)
+python run.py --version     # Exibe versao
+```
+
+### 7. Acessar a Interface Web
 
 - **Local:** `http://localhost:3000`
 - **Rede Local:** `http://SEU-IP:3000`

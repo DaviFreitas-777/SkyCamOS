@@ -250,13 +250,18 @@ class AuthService {
      * @returns {boolean}
      */
     hasPermission(permission) {
-        if (!this.user || !this.user.permissions) {
+        if (!this.user) {
             return false;
         }
 
         // Admin tem todas as permissoes
-        if (this.user.role === 'admin') {
+        if (this.user.role === 'admin' || this.user.is_superuser) {
             return true;
+        }
+
+        // Verificar permissoes especificas
+        if (!this.user.permissions) {
+            return false;
         }
 
         return this.user.permissions.includes(permission);
