@@ -3,7 +3,9 @@
     { "source": "/", "destination": "/public/index.html" },
     { "source": "/index.html", "destination": "/public/index.html" },
     { "source": "/manifest.json", "destination": "/public/manifest.json" },
-    { "source": "/service-worker.js", "destination": "/public/service-worker.js" },
+    { "source": "/sw.js", "destination": "/public/sw.js" },
+    { "source": "/service-worker.js", "destination": "/public/sw.js" },
+    { "source": "/env.js", "destination": "/public/env.js" },
     { "source": "/icons/:path*", "destination": "/public/icons/:path*" }
   ],
   "headers": [
