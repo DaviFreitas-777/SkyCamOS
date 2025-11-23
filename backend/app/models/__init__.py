@@ -9,10 +9,13 @@ from app.models.camera import Camera
 from app.models.event import Event
 from app.models.recording import Recording
 from app.models.user import User
+from app.models.storage_pool import StoragePool, CameraStorageAssignment
 
 __all__ = [
     "Camera",
     "Event",
     "Recording",
     "User",
+    "StoragePool",
+    "CameraStorageAssignment",
 ]
