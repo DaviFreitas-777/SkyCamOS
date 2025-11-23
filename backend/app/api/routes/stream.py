@@ -78,10 +78,22 @@ async def mjpeg_stream(
         stream_info = await stream_service.start_stream(camera_id, camera.rtsp_full_url)
 
         if stream_info is None:
+            # Atualiza status para erro
+            if camera.status != "error":
+                camera.status = "error"
+                await db.commit()
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Nao foi possivel iniciar stream",
             )
+
+        # Stream iniciado com sucesso - atualiza status para online
+        if camera.status != "online" and camera.status != "recording":
+            camera.status = "online"
+            from datetime import datetime
+            camera.last_seen = datetime.utcnow()
+            await db.commit()
+            logger.info(f"Camera {camera_id} status atualizado para online")
 
     # Obtem streamer MJPEG
     streamer = stream_service.get_mjpeg_streamer(camera_id)

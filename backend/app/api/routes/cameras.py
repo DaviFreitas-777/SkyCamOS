@@ -440,6 +440,201 @@ async def discover_cameras(
 
 
 @router.post(
+    "/discover-and-test",
+    summary="Descobrir e testar cameras",
+    description="Busca cameras na rede e testa credenciais automaticamente.",
+)
+async def discover_and_test_cameras(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    username: str = "admin",
+    password: str = "",
+    ips: Optional[str] = None,
+) -> list[dict]:
+    """
+    Descobre cameras na rede e testa as credenciais fornecidas.
+
+    Fluxo:
+    1. Se IPs fornecidos, testa esses IPs diretamente
+    2. Senao, descobre cameras via ONVIF/SSDP
+    3. Testa credenciais em cada camera
+    4. Retorna lista com status de conexao e URL RTSP
+
+    Args:
+        current_user: Usuario autenticado.
+        username: Usuario para testar (padrao: admin)
+        password: Senha para testar
+        ips: Lista de IPs separados por virgula (opcional)
+
+    Returns:
+        Lista de cameras com resultado do teste
+    """
+    import asyncio
+
+    # Verifica permissao
+    if not current_user.can_manage_cameras:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sem permissao para descobrir cameras",
+        )
+
+    results = []
+
+    # Se IPs especificos foram fornecidos, testa diretamente
+    if ips:
+        ip_list = [ip.strip() for ip in ips.split(",") if ip.strip()]
+        logger.info(f"Testando {len(ip_list)} IPs especificos: {ip_list}")
+
+        for ip in ip_list:
+            try:
+                # Testa credenciais no IP
+                test_result = await onvif_discovery_service.test_credentials(
+                    ip_address=ip,
+                    port=554,
+                    username=username,
+                    password=password,
+                )
+
+                results.append({
+                    "ip_address": ip,
+                    "port": 554,
+                    "protocol": "direct",
+                    "manufacturer": test_result.get("manufacturer", "Desconhecido"),
+                    "model": test_result.get("model"),
+                    "name": f"Camera {ip}",
+                    "requires_auth": True,
+                    "connection_test": test_result,
+                    "rtsp_url": test_result.get("rtsp_url"),
+                    "is_accessible": test_result.get("success", False),
+                })
+            except Exception as e:
+                logger.error(f"Erro ao testar IP {ip}: {e}")
+                results.append({
+                    "ip_address": ip,
+                    "port": 554,
+                    "protocol": "direct",
+                    "manufacturer": "Desconhecido",
+                    "name": f"Camera {ip}",
+                    "requires_auth": True,
+                    "is_accessible": False,
+                    "error": str(e),
+                })
+
+        logger.info(f"Teste direto: {len(results)} IPs, {sum(1 for r in results if r.get('is_accessible'))} acessiveis")
+        return results
+
+    # Descoberta automatica via ONVIF
+    results = await onvif_discovery_service.discover_and_test(
+        username=username,
+        password=password,
+    )
+
+    # Tambem tenta SSDP
+    try:
+        ssdp_devices = await ssdp_discovery_service.discover(cameras_only=True)
+        existing_ips = {r["ip_address"] for r in results}
+
+        for device in ssdp_devices:
+            if device.ip_address not in existing_ips:
+                # Testa credenciais para dispositivo SSDP
+                test_result = await onvif_discovery_service.test_credentials(
+                    ip_address=device.ip_address,
+                    port=554,
+                    username=username,
+                    password=password,
+                )
+
+                results.append({
+                    "ip_address": device.ip_address,
+                    "port": device.port,
+                    "protocol": "ssdp",
+                    "manufacturer": device.manufacturer,
+                    "model": device.model,
+                    "name": device.friendly_name or f"Camera {device.ip_address}",
+                    "requires_auth": True,
+                    "connection_test": test_result,
+                    "rtsp_url": test_result.get("rtsp_url"),
+                    "is_accessible": test_result.get("success", False),
+                })
+    except Exception as e:
+        logger.error(f"Erro ao descobrir SSDP: {e}")
+
+    logger.info(f"Descoberta com teste: {len(results)} cameras, {sum(1 for r in results if r.get('is_accessible'))} acessiveis")
+
+    return results
+
+
+@router.post(
+    "/add-discovered",
+    response_model=CameraResponse,
+    summary="Adicionar camera descoberta",
+    description="Adiciona uma camera que foi descoberta automaticamente.",
+)
+async def add_discovered_camera(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+    ip_address: str,
+    name: str,
+    username: str = "admin",
+    password: str = "",
+    rtsp_url: Optional[str] = None,
+    manufacturer: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+) -> CameraResponse:
+    """
+    Adiciona uma camera descoberta com suas credenciais.
+
+    Se rtsp_url nao for fornecida, tenta obter automaticamente.
+    """
+    # Verifica permissao
+    if not current_user.can_manage_cameras:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sem permissao para adicionar cameras",
+        )
+
+    # Se nao tem rtsp_url, tenta descobrir
+    if not rtsp_url:
+        rtsp_url = await onvif_discovery_service.get_rtsp_url(
+            ip_address=ip_address,
+            port=80,
+            username=username,
+            password=password,
+            manufacturer=manufacturer,
+        )
+
+    # Cria dados da camera
+    camera_data = CameraCreate(
+        name=name,
+        ip_address=ip_address,
+        port=554,
+        protocol="rtsp",
+        username=username,
+        password=password,
+        rtsp_url=rtsp_url,
+        manufacturer=manufacturer,
+    )
+
+    # Verifica se ja existe
+    existing = await db.execute(
+        select(Camera).where(Camera.ip_address == ip_address)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Camera com IP {ip_address} ja existe",
+        )
+
+    # Cria camera
+    camera = Camera(**camera_data.model_dump(exclude_unset=True))
+    db.add(camera)
+    await db.commit()
+    await db.refresh(camera)
+
+    logger.info(f"Camera descoberta adicionada: {camera.name} ({camera.ip_address})")
+
+    return CameraResponse.model_validate(camera)
+
+
+@router.post(
     "/test",
     response_model=CameraTestResult,
     summary="Testar conexao",

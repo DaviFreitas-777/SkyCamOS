@@ -27,12 +27,13 @@ class SettingsPage extends HTMLElement {
     async loadSettings() {
         this.loading = true;
         try {
-            const [settings, cameras] = await Promise.all([
+            const [settings, camerasResponse] = await Promise.all([
                 apiService.getSettings(),
                 apiService.getCameras()
             ]);
             this.settings = settings;
-            this.cameras = cameras;
+            // API retorna {items: [...]} ou array direto
+            this.cameras = Array.isArray(camerasResponse) ? camerasResponse : (camerasResponse?.items || []);
             this.renderTabContent();
         } catch (error) {
             console.error('[Settings] Erro ao carregar:', error);

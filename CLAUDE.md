@@ -8,58 +8,137 @@ Sempre responda em **Portugues BR**. Evite usar emojis no codigo para prevenir p
 
 ## Projeto
 
-**SkyCamOS** - Sistema de monitoramento de cameras IP (desktop + web PWA), similar ao Digiforte/Luxriot EVO, porem simplificado.
+**SkyCamOS** - Sistema de monitoramento de cameras IP (desktop + web PWA), alternativa simplificada ao Digiforte/Luxriot EVO.
 
-### Documentacao Principal
+## Comandos de Desenvolvimento
 
-O arquivo `SkyCamOS.md` contem os requisitos completos e especificacao arquitetural do projeto.
+### Iniciar Servidores (Windows)
+
+```bash
+# Backend (Terminal 1) - porta 8000
+cd backend && start.bat
+# ou: py -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend (Terminal 2) - porta 3000
+cd frontend && start.bat
+# ou: npx serve public -l 3000
+```
+
+### Makefile (Linux/Mac/WSL)
+
+```bash
+make install          # Instala dependencias backend + frontend
+make backend-dev      # Inicia backend com hot-reload
+make frontend-dev     # Inicia frontend com hot-reload
+make test             # Executa todos os testes
+make lint             # Executa linters (ruff, eslint)
+make format           # Formata codigo (black, prettier)
+make docker-up        # Sobe containers Docker
+```
+
+### Testes
+
+```bash
+# Backend
+cd backend && py -m pytest tests/ -v
+
+# Frontend
+cd frontend && npm test
+```
 
 ## Arquitetura
 
-O sistema e composto por 4 modulos principais:
-
-### 1. Desktop Manager
-- Descoberta automatica de cameras via ONVIF/SSDP
-- Configuracao de gravacoes e gerenciamento de disco
-- Gerenciamento do PWA e API
-
-### 2. Backend/API
-- REST API + WebSockets para streaming ao vivo
-- Servico de gravacao (continua + por eventos)
-- Sobrescrita FIFO para gerenciamento de armazenamento
-- Deteccao de movimento (software ou ONVIF nativo)
-- Notificacoes push
-- Conversao RTSP para WebRTC/HLS
-
-### 3. Web/PWA
-- Dashboard de cameras (mosaicos 1x1, 2x2, 3x3)
-- Timeline de gravacoes e reproducao
-- Modo offline com dados em cache
-- Notificacoes push
-- Instalavel como app nativo
-
-### 4. Banco de Dados (SQLite)
-- Cameras, configuracoes, eventos de movimento, gravacoes, usuarios
-
-## Comandos
-
-```bash
-# Executar Python (Windows)
-py <script.py>
-
-# Executar testes (quando implementado)
-py -m pytest
-
-# Executar servidor de desenvolvimento (quando implementado)
-py -m uvicorn main:app --reload
+```
+┌─────────────────────────────────────────────────┐
+│                   SKYCAMOS                       │
+├─────────────────────────────────────────────────┤
+│  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
+│  │  DESKTOP   │  │  BACKEND   │  │  WEB/PWA  │ │
+│  │  MANAGER   │◄─► API (8000) │◄─► (3000)    │ │
+│  └────────────┘  └────────────┘  └───────────┘ │
+│                        │                        │
+│                   ┌────────────┐                │
+│                   │  SQLite    │                │
+│                   │  Database  │                │
+│                   └────────────┘                │
+└─────────────────────────────────────────────────┘
+                        │
+                   CAMERAS IP
+                  (ONVIF/RTSP)
 ```
 
-## Diretrizes de Desenvolvimento
+### Backend (FastAPI)
 
-1. **Antes de implementar**: Sempre verificar a arquitetura existente para evitar duplicacao de codigo ou funcionalidades
-2. **Cameras suportadas**: Ate 10 cameras IP
-3. **Protocolos**: ONVIF, SSDP, RTSP, WebRTC, HLS
-4. **Deteccao de movimento**:
-   - Opcao 1: Diferenca entre frames (software)
-   - Opcao 2: Eventos ONVIF nativos da camera
-5. **Gravacoes**: Clips de 10-30 segundos em eventos de movimento
+- **Localizacao:** `/backend/`
+- **Framework:** FastAPI + Uvicorn
+- **Database:** SQLite + SQLAlchemy (async)
+- **Auth:** JWT (python-jose)
+
+**Estrutura de rotas:**
+- `/api/v1/auth/*` - Autenticacao (login, refresh)
+- `/api/v1/cameras/*` - CRUD de cameras
+- `/api/v1/recordings/*` - Gravacoes
+- `/api/v1/events/*` - Eventos de movimento
+- `/api/v1/stream/*` - Streaming MJPEG/WebSocket
+- `/api/v1/analytics/*` - IA (person detection, line crossing)
+- `/api/v1/notifications/*` - Push notifications
+- `/api/v1/settings/*` - Configuracoes
+
+**Servicos principais:**
+- `motion_detection.py` - Deteccao de movimento (OpenCV)
+- `person_detection.py` - Deteccao de pessoas (MobileNet SSD/HOG)
+- `line_crossing.py` - Cruzamento de linhas virtuais
+- `storage_manager.py` - Gerenciamento de disco FIFO
+
+### Frontend (Vanilla JS PWA)
+
+- **Localizacao:** `/frontend/`
+- **Entry point:** `/frontend/public/index.html`
+- **Main JS:** `/frontend/src/index.js`
+
+**Estrutura:**
+- `/src/pages/` - Paginas (Dashboard, Recordings, Events, Settings, Login)
+- `/src/components/` - Componentes reutilizaveis
+- `/src/services/` - API client, auth, notifications
+- `/src/hooks/` - Custom hooks (useAuth, useCamera, useWebSocket)
+- `/public/` - Assets estaticos, sw.js, manifest.json
+
+**PWA:**
+- Service Worker em `/public/sw.js`
+- Manifest em `/public/manifest.json`
+- Configuracao Vercel em `/vercel.json`
+
+## Stack Tecnologico
+
+| Camada | Tecnologia |
+|--------|------------|
+| Backend | Python 3.11+, FastAPI, SQLAlchemy, OpenCV |
+| Frontend | Vanilla JS (ES modules), HLS.js |
+| Database | SQLite (aiosqlite) |
+| Auth | JWT (python-jose, bcrypt) |
+| Streaming | MJPEG, WebSocket, HLS |
+| AI | OpenCV (MOG2, HOG), MobileNet SSD |
+
+## Credenciais Padrao
+
+```
+Usuario: admin
+Senha: admin123
+```
+
+## Variaveis de Ambiente
+
+Backend usa `.env` na raiz do backend:
+- `SECRET_KEY` - Chave JWT
+- `DATABASE_URL` - sqlite+aiosqlite:///./data/skycamos.db
+- `DEBUG` - true/false
+- `CORS_ORIGINS` - URLs permitidas
+
+Frontend usa `/frontend/public/env.js` para detectar ambiente automaticamente.
+
+## Documentacao Adicional
+
+- `SkyCamOS.md` - Especificacao tecnica completa
+- `docs/ARCHITECTURE.md` - Arquitetura detalhada
+- `docs/API.md` - Documentacao da API
+- `docs/DEPLOYMENT.md` - Guia de deploy

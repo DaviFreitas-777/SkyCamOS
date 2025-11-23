@@ -110,6 +110,9 @@ class StorageService {
      * @returns {Promise<void>}
      */
     async set(key, value) {
+        // Aguardar IndexedDB estar pronto
+        await this.waitForDB();
+
         // Tentar IndexedDB primeiro
         if (this.db) {
             return this.setIndexedDB(key, value);
@@ -130,6 +133,9 @@ class StorageService {
      * @returns {Promise<any>}
      */
     async get(key) {
+        // Aguardar IndexedDB estar pronto
+        await this.waitForDB();
+
         // Tentar IndexedDB primeiro
         if (this.db) {
             return this.getIndexedDB(key);
@@ -151,6 +157,9 @@ class StorageService {
      * @returns {Promise<void>}
      */
     async remove(key) {
+        // Aguardar IndexedDB estar pronto
+        await this.waitForDB();
+
         // Tentar IndexedDB primeiro
         if (this.db) {
             return this.removeIndexedDB(key);
@@ -165,6 +174,9 @@ class StorageService {
      * @returns {Promise<void>}
      */
     async clear() {
+        // Aguardar IndexedDB estar pronto
+        await this.waitForDB();
+
         // Limpar IndexedDB
         if (this.db) {
             const transaction = this.db.transaction(['keyvalue'], 'readwrite');

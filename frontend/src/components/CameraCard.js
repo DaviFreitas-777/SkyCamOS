@@ -115,7 +115,7 @@ class SkycamCameraCard extends HTMLElement {
                 </div>
 
                 <div class="camera-card-video">
-                    ${this.cameraStatus === CAMERA_STATUS.ONLINE || this.cameraStatus === CAMERA_STATUS.RECORDING ?
+                    ${this.cameraStatus === CAMERA_STATUS.ONLINE || this.cameraStatus === CAMERA_STATUS.RECORDING || this.cameraStatus === CAMERA_STATUS.CONNECTING ?
                         `<skycam-video-player
                             src="${this.streamUrl}"
                             camera-id="${this.cameraId}"

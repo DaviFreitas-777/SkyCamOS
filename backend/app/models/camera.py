@@ -181,7 +181,35 @@ class Camera(Base):
         if self.username and self.password:
             auth = f"{self.username}:{self.password}@"
 
-        return f"rtsp://{auth}{self.ip_address}:{self.port}/stream1"
+        # Path RTSP padrao baseado no fabricante
+        path = self._get_rtsp_path_by_manufacturer()
+
+        return f"rtsp://{auth}{self.ip_address}:{self.port}{path}"
+
+    def _get_rtsp_path_by_manufacturer(self) -> str:
+        """Retorna o path RTSP padrao baseado no fabricante."""
+        manufacturer = (self.manufacturer or "").lower()
+
+        # Paths mais comuns por fabricante
+        if "hikvision" in manufacturer:
+            return "/Streaming/Channels/101"
+        elif "dahua" in manufacturer or "intelbras" in manufacturer:
+            return "/cam/realmonitor?channel=1&subtype=0"
+        elif "axis" in manufacturer:
+            return "/axis-media/media.amp"
+        elif "vivotek" in manufacturer:
+            return "/live.sdp"
+        elif "hanwha" in manufacturer or "samsung" in manufacturer:
+            return "/profile2/media.smp"
+        elif "uniview" in manufacturer:
+            return "/media/video1"
+        elif "reolink" in manufacturer:
+            return "/h264Preview_01_main"
+        elif "amcrest" in manufacturer:
+            return "/cam/realmonitor?channel=1&subtype=0"
+        else:
+            # Paths genericos mais comuns - tenta Hikvision padrao
+            return "/Streaming/Channels/101"
 
     @property
     def is_online(self) -> bool:

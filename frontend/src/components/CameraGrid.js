@@ -114,12 +114,20 @@ class SkycamCameraGrid extends HTMLElement {
 
                 ${cameras.length === 0 || cameras.length < layoutConfig.max ? `
                     <div class="camera-grid-add" id="add-camera-slot">
+                        <button class="btn btn-primary camera-discover-btn" id="discover-cameras-btn">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                                <path d="M11 8v6M8 11h6"/>
+                            </svg>
+                            <span>Descobrir Cameras na Rede</span>
+                        </button>
                         <button class="btn btn-ghost camera-add-btn">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                                 <path d="M12 8v8M8 12h8"/>
                             </svg>
-                            <span>Adicionar Camera</span>
+                            <span>Adicionar Manualmente</span>
                         </button>
                     </div>
                 ` : ''}
@@ -219,14 +227,26 @@ class SkycamCameraGrid extends HTMLElement {
             .camera-grid-add {
                 margin-top: var(--spacing-md);
                 text-align: center;
+                display: flex;
+                justify-content: center;
+                gap: var(--spacing-md);
+                flex-wrap: wrap;
             }
 
-            .camera-add-btn {
-                padding: var(--spacing-md);
+            .camera-add-btn,
+            .camera-discover-btn {
+                padding: var(--spacing-md) var(--spacing-lg);
+                display: inline-flex;
+                align-items: center;
             }
 
-            .camera-add-btn span {
+            .camera-add-btn span,
+            .camera-discover-btn span {
                 margin-left: var(--spacing-sm);
+            }
+
+            .camera-discover-btn {
+                background: linear-gradient(135deg, var(--primary-color) 0%, #3b7ddd 100%);
             }
 
             @media (max-width: 1024px) {
@@ -271,6 +291,11 @@ class SkycamCameraGrid extends HTMLElement {
 
         this.querySelector('.camera-add-btn')?.addEventListener('click', () => {
             this.showAddCameraModal();
+        });
+
+        // Discover cameras
+        this.querySelector('#discover-cameras-btn')?.addEventListener('click', () => {
+            this.showDiscoverCamerasModal();
         });
 
         // Ouvir mudanca de layout
@@ -370,6 +395,13 @@ class SkycamCameraGrid extends HTMLElement {
      */
     showAddCameraModal() {
         document.dispatchEvent(new CustomEvent('show-add-camera-modal'));
+    }
+
+    /**
+     * Mostrar modal de descoberta de cameras
+     */
+    showDiscoverCamerasModal() {
+        document.dispatchEvent(new CustomEvent('show-discover-cameras-modal'));
     }
 }
 

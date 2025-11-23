@@ -3,20 +3,28 @@
  * Este arquivo configura as variaveis de ambiente para o frontend
  */
 
-// Detectar ambiente
-const isDevelopment = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+// Detectar ambiente - localhost, 127.0.0.1 ou IP de rede local
+const hostname = window.location.hostname;
+const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+const isLocalNetwork = /^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)/.test(hostname);
+const isDevelopment = isLocalhost || isLocalNetwork;
 
 // URL do backend
-// Em desenvolvimento: localhost:8000
-// Em producao: configurar via Vercel Environment Variables
-const BACKEND_URL = isDevelopment
-    ? 'http://localhost:8000'
-    : (window.ENV?.API_BASE_URL || 'https://seu-backend.com');
+// Em rede local: usa o mesmo IP do frontend, porta 8000
+// Em localhost: localhost:8000
+// Em producao: configurar via window.ENV
+const BACKEND_URL = isLocalNetwork
+    ? `http://${hostname}:8000`
+    : isLocalhost
+        ? 'http://localhost:8000'
+        : (window.ENV?.API_BASE_URL || 'https://seu-backend.com');
 
 // WebSocket URL
-const WS_URL = isDevelopment
-    ? 'ws://localhost:8000/api/v1/stream/ws'
-    : (window.ENV?.WS_URL || BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/api/v1/stream/ws');
+const WS_URL = isLocalNetwork
+    ? `ws://${hostname}:8000/api/v1/stream/ws`
+    : isLocalhost
+        ? 'ws://localhost:8000/api/v1/stream/ws'
+        : (window.ENV?.WS_URL || BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://') + '/api/v1/stream/ws');
 
 // Exportar configuracoes
 window.ENV = {

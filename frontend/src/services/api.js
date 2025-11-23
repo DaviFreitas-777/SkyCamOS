@@ -371,6 +371,42 @@ class ApiService {
     }
 
     /**
+     * Descobrir cameras e testar credenciais
+     * @param {string} username - Usuario para testar
+     * @param {string} password - Senha para testar
+     * @param {Array} ips - Lista de IPs especificos (opcional)
+     * @returns {Promise<Array>} - Lista de cameras com status
+     */
+    async discoverAndTestCameras(username = 'admin', password = '', ips = []) {
+        const params = new URLSearchParams({
+            username: username,
+            password: password
+        });
+        if (ips && ips.length > 0) {
+            params.append('ips', ips.join(','));
+        }
+        return this.post(`/api/v1/cameras/discover-and-test?${params.toString()}`);
+    }
+
+    /**
+     * Adicionar camera descoberta
+     * @param {Object} camera - Dados da camera descoberta
+     * @returns {Promise<Object>}
+     */
+    async addDiscoveredCamera(camera) {
+        const params = new URLSearchParams({
+            ip_address: camera.ip_address,
+            name: camera.name,
+            username: camera.username || 'admin',
+            password: camera.password || '',
+        });
+        if (camera.rtsp_url) params.append('rtsp_url', camera.rtsp_url);
+        if (camera.manufacturer) params.append('manufacturer', camera.manufacturer);
+
+        return this.post(`/api/v1/cameras/add-discovered?${params.toString()}`);
+    }
+
+    /**
      * Testar conexao com camera
      * @param {Object} data - Dados de conexao
      * @returns {Promise<Object>}

@@ -8,7 +8,7 @@ relacionadas a cameras IP.
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, IPvAnyAddress
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, IPvAnyAddress
 
 
 class CameraBase(BaseModel):
@@ -257,6 +257,13 @@ class CameraResponse(CameraBase):
     last_recording: Optional[datetime] = None
 
     is_online: bool
+
+    @model_validator(mode='after')
+    def populate_stream_url(self) -> 'CameraResponse':
+        """Popula stream_url com base no ID da camera."""
+        if not self.stream_url and self.id:
+            self.stream_url = f"/api/v1/stream/{self.id}/mjpeg"
+        return self
 
 
 class CameraListResponse(BaseModel):

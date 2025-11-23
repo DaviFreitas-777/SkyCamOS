@@ -262,6 +262,286 @@ class SkyCamApp {
         document.addEventListener('show-add-camera-modal', () => {
             this.showAddCameraModal();
         });
+
+        // Modal de descoberta automatica
+        document.addEventListener('show-discover-cameras-modal', () => {
+            this.showDiscoverCamerasModal();
+        });
+    }
+
+    /**
+     * Mostrar modal de descoberta automatica de cameras
+     */
+    async showDiscoverCamerasModal() {
+        const modal = document.getElementById('modal-container');
+        if (!modal) return;
+
+        modal.classList.add('active');
+        modal.innerHTML = `
+            <div class="modal-backdrop" id="modal-backdrop"></div>
+            <div class="modal-content" style="width: 650px; padding: var(--spacing-lg); max-height: 80vh; overflow-y: auto;">
+                <h2 style="margin-bottom: var(--spacing-md);">Descobrir Cameras na Rede</h2>
+                <p style="margin-bottom: var(--spacing-md); color: var(--text-secondary);">
+                    Configure como deseja buscar as cameras na rede.
+                </p>
+
+                <div id="discover-form">
+                    <!-- Modo de busca -->
+                    <div class="input-group" style="margin-bottom: var(--spacing-md);">
+                        <label class="input-label">Modo de Busca</label>
+                        <select class="input" id="discover-mode" style="width: 100%;">
+                            <option value="specific">IP Especifico (mais rapido)</option>
+                            <option value="range">Faixa de IPs</option>
+                            <option value="auto">Descoberta Automatica (ONVIF)</option>
+                        </select>
+                    </div>
+
+                    <!-- IP Especifico -->
+                    <div id="specific-ip-fields" style="margin-bottom: var(--spacing-md);">
+                        <div class="input-group" style="margin-bottom: var(--spacing-xs);">
+                            <label class="input-label">IP da Camera</label>
+                            <input type="text" class="input" id="discover-ip" placeholder="Ex: 192.168.100.50">
+                        </div>
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0;">
+                            Separe multiplos IPs por virgula: 192.168.100.50, 192.168.100.51
+                        </p>
+                    </div>
+
+                    <!-- Range de IPs -->
+                    <div id="range-ip-fields" style="display: none; margin-bottom: var(--spacing-md);">
+                        <div style="display: flex; gap: var(--spacing-sm); align-items: flex-end;">
+                            <div class="input-group" style="flex: 1;">
+                                <label class="input-label">IP Inicial</label>
+                                <input type="text" class="input" id="discover-ip-start" placeholder="192.168.100.1">
+                            </div>
+                            <span style="padding-bottom: 12px;">ate</span>
+                            <div class="input-group" style="flex: 1;">
+                                <label class="input-label">IP Final</label>
+                                <input type="text" class="input" id="discover-ip-end" placeholder="192.168.100.254">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Credenciais -->
+                    <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                        <div class="input-group" style="flex: 1;">
+                            <label class="input-label">Usuario</label>
+                            <input type="text" class="input" id="discover-username" value="admin" placeholder="admin">
+                        </div>
+                        <div class="input-group" style="flex: 1;">
+                            <label class="input-label">Senha</label>
+                            <input type="password" class="input" id="discover-password" placeholder="Senha da camera">
+                        </div>
+                    </div>
+
+                    <div class="flex gap-sm" style="justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" id="cancel-discover">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="start-discover">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            Buscar Cameras
+                        </button>
+                    </div>
+                </div>
+
+                <div id="discover-loading" style="display: none; text-align: center; padding: var(--spacing-xl);">
+                    <div class="spinner" style="margin: 0 auto var(--spacing-md);"></div>
+                    <p>Buscando cameras na rede...</p>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">Isso pode levar alguns segundos</p>
+                </div>
+
+                <div id="discover-results" style="display: none;">
+                    <h3 style="margin-bottom: var(--spacing-sm);">Cameras Encontradas</h3>
+                    <div id="cameras-list" style="margin-bottom: var(--spacing-md);"></div>
+                    <div class="flex gap-sm" style="justify-content: flex-end;">
+                        <button type="button" class="btn btn-secondary" id="cancel-results">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="add-selected">Adicionar Selecionadas</button>
+                    </div>
+                </div>
+
+                <div id="discover-empty" style="display: none; text-align: center; padding: var(--spacing-xl);">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" style="margin-bottom: var(--spacing-md);">
+                        <rect x="2" y="6" width="14" height="12" rx="2"/><path d="M22 8l-4 4 4 4V8z"/><path d="M2 2l20 20"/>
+                    </svg>
+                    <p>Nenhuma camera encontrada na rede</p>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">Verifique se as cameras estao ligadas e conectadas</p>
+                    <button type="button" class="btn btn-secondary" id="retry-discover" style="margin-top: var(--spacing-md);">Tentar Novamente</button>
+                </div>
+            </div>
+        `;
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            modal.innerHTML = '';
+        };
+
+        // Event listeners
+        modal.querySelector('#modal-backdrop')?.addEventListener('click', closeModal);
+        modal.querySelector('#cancel-discover')?.addEventListener('click', closeModal);
+        modal.querySelector('#cancel-results')?.addEventListener('click', closeModal);
+
+        // Alternar campos de acordo com o modo de busca
+        modal.querySelector('#discover-mode')?.addEventListener('change', (e) => {
+            const mode = e.target.value;
+            const specificFields = modal.querySelector('#specific-ip-fields');
+            const rangeFields = modal.querySelector('#range-ip-fields');
+
+            if (mode === 'specific') {
+                specificFields.style.display = 'block';
+                rangeFields.style.display = 'none';
+            } else if (mode === 'range') {
+                specificFields.style.display = 'none';
+                rangeFields.style.display = 'block';
+            } else {
+                specificFields.style.display = 'none';
+                rangeFields.style.display = 'none';
+            }
+        });
+
+        // Buscar cameras
+        modal.querySelector('#start-discover')?.addEventListener('click', async () => {
+            const mode = modal.querySelector('#discover-mode').value;
+            const username = modal.querySelector('#discover-username').value || 'admin';
+            const password = modal.querySelector('#discover-password').value || '';
+
+            // Coletar IPs baseado no modo
+            let ips = [];
+            if (mode === 'specific') {
+                const ipInput = modal.querySelector('#discover-ip').value.trim();
+                if (!ipInput) {
+                    this.notifications.warning('Digite pelo menos um IP');
+                    return;
+                }
+                ips = ipInput.split(',').map(ip => ip.trim()).filter(ip => ip);
+            } else if (mode === 'range') {
+                const startIp = modal.querySelector('#discover-ip-start').value.trim();
+                const endIp = modal.querySelector('#discover-ip-end').value.trim();
+                if (!startIp || !endIp) {
+                    this.notifications.warning('Digite o IP inicial e final');
+                    return;
+                }
+                // Gerar range de IPs
+                const startParts = startIp.split('.').map(Number);
+                const endParts = endIp.split('.').map(Number);
+                const base = startParts.slice(0, 3).join('.');
+                for (let i = startParts[3]; i <= endParts[3]; i++) {
+                    ips.push(`${base}.${i}`);
+                }
+            }
+
+            // Mostra loading
+            modal.querySelector('#discover-form').style.display = 'none';
+            modal.querySelector('#discover-loading').style.display = 'block';
+
+            try {
+                const { apiService } = await import('./services/api.js');
+                let cameras;
+
+                if (mode === 'auto') {
+                    // Descoberta automatica via ONVIF
+                    cameras = await apiService.discoverAndTestCameras(username, password);
+                } else {
+                    // Testar IPs especificos
+                    cameras = await apiService.discoverAndTestCameras(username, password, ips);
+                }
+
+                modal.querySelector('#discover-loading').style.display = 'none';
+
+                if (cameras && cameras.length > 0) {
+                    // Mostra resultados
+                    this.renderDiscoveredCameras(modal, cameras, username, password, closeModal);
+                } else {
+                    // Nenhuma camera encontrada
+                    modal.querySelector('#discover-empty').style.display = 'block';
+                    modal.querySelector('#retry-discover')?.addEventListener('click', () => {
+                        modal.querySelector('#discover-empty').style.display = 'none';
+                        modal.querySelector('#discover-form').style.display = 'block';
+                    });
+                }
+            } catch (error) {
+                console.error('[Discover] Erro:', error);
+                modal.querySelector('#discover-loading').style.display = 'none';
+                modal.querySelector('#discover-form').style.display = 'block';
+                this.notifications.error('Erro ao buscar cameras: ' + error.message);
+            }
+        });
+    }
+
+    /**
+     * Renderiza lista de cameras descobertas
+     */
+    renderDiscoveredCameras(modal, cameras, username, password, closeModal) {
+        const list = modal.querySelector('#cameras-list');
+        list.innerHTML = cameras.map((cam, index) => `
+            <div class="discover-camera-item" style="
+                display: flex;
+                align-items: center;
+                padding: var(--spacing-sm);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-sm);
+                margin-bottom: var(--spacing-xs);
+                background: ${cam.is_accessible ? 'var(--success-bg)' : 'var(--surface-secondary)'};
+            ">
+                <input type="checkbox" id="cam-${index}" ${cam.is_accessible ? 'checked' : ''} style="margin-right: var(--spacing-sm);">
+                <div style="flex: 1;">
+                    <div style="font-weight: 500;">${cam.name || 'Camera ' + cam.ip_address}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                        ${cam.ip_address} | ${cam.manufacturer || 'Fabricante desconhecido'}
+                        ${cam.is_accessible ? ' | Conexao OK' : ' | Sem resposta'}
+                    </div>
+                </div>
+                <span style="
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-size: 0.75rem;
+                    background: ${cam.is_accessible ? 'var(--success)' : 'var(--warning)'};
+                    color: white;
+                ">${cam.is_accessible ? 'Online' : 'Verificar'}</span>
+            </div>
+        `).join('');
+
+        modal.querySelector('#discover-results').style.display = 'block';
+
+        // Adicionar selecionadas
+        modal.querySelector('#add-selected')?.addEventListener('click', async () => {
+            const checkboxes = list.querySelectorAll('input[type="checkbox"]:checked');
+            const selectedIndexes = Array.from(checkboxes).map(cb => parseInt(cb.id.replace('cam-', '')));
+
+            if (selectedIndexes.length === 0) {
+                this.notifications.warning('Selecione pelo menos uma camera');
+                return;
+            }
+
+            const { apiService } = await import('./services/api.js');
+            const { useCamera } = await import('./hooks/useCamera.js');
+            const cameraManager = useCamera();
+
+            let added = 0;
+            for (const index of selectedIndexes) {
+                const cam = cameras[index];
+                try {
+                    await apiService.addDiscoveredCamera({
+                        ip_address: cam.ip_address,
+                        name: cam.name || 'Camera ' + cam.ip_address,
+                        username: username,
+                        password: password,
+                        rtsp_url: cam.rtsp_url,
+                        manufacturer: cam.manufacturer,
+                    });
+                    added++;
+                } catch (error) {
+                    console.error('[Discover] Erro ao adicionar:', cam.ip_address, error);
+                }
+            }
+
+            if (added > 0) {
+                this.notifications.success(added + ' camera(s) adicionada(s) com sucesso!');
+                await cameraManager.loadCameras(true);
+            }
+
+            closeModal();
+        });
     }
 
     /**
@@ -304,12 +584,24 @@ class SkyCamApp {
                         <input type="text" class="input" name="name" required placeholder="Ex: Entrada Principal">
                     </div>
                     <div class="input-group" style="margin-bottom: var(--spacing-md);">
-                        <label class="input-label">URL RTSP</label>
-                        <input type="text" class="input" name="url" required placeholder="rtsp://usuario:senha@ip:porta/stream">
+                        <label class="input-label">Endereco IP</label>
+                        <input type="text" class="input" name="ip_address" required placeholder="Ex: 192.168.1.100">
                     </div>
                     <div class="input-group" style="margin-bottom: var(--spacing-md);">
-                        <label class="input-label">Grupo (opcional)</label>
-                        <input type="text" class="input" name="group" placeholder="Ex: Externo">
+                        <label class="input-label">Porta RTSP</label>
+                        <input type="number" class="input" name="port" value="554" placeholder="554">
+                    </div>
+                    <div class="input-group" style="margin-bottom: var(--spacing-md);">
+                        <label class="input-label">Usuario</label>
+                        <input type="text" class="input" name="username" placeholder="admin">
+                    </div>
+                    <div class="input-group" style="margin-bottom: var(--spacing-md);">
+                        <label class="input-label">Senha</label>
+                        <input type="password" class="input" name="password" placeholder="Senha da camera">
+                    </div>
+                    <div class="input-group" style="margin-bottom: var(--spacing-md);">
+                        <label class="input-label">URL RTSP (opcional)</label>
+                        <input type="text" class="input" name="rtsp_url" placeholder="rtsp://ip:porta/stream1">
                     </div>
                     <div class="flex gap-sm" style="justify-content: flex-end;">
                         <button type="button" class="btn btn-secondary" id="cancel-modal">Cancelar</button>
@@ -334,12 +626,26 @@ class SkyCamApp {
             const formData = new FormData(e.target);
             const data = Object.fromEntries(formData);
 
+            // Converter porta para numero
+            if (data.port) {
+                data.port = parseInt(data.port, 10);
+            }
+
+            // Remover campos vazios
+            Object.keys(data).forEach(key => {
+                if (data[key] === '') {
+                    delete data[key];
+                }
+            });
+
             try {
                 const { useCamera } = await import('./hooks/useCamera.js');
                 const cameraManager = useCamera();
                 await cameraManager.createCamera(data);
                 this.notifications.success('Camera adicionada com sucesso');
                 closeModal();
+                // Recarregar lista de cameras
+                await cameraManager.loadCameras(true);
             } catch (error) {
                 this.notifications.error(error.message || 'Erro ao adicionar camera');
             }

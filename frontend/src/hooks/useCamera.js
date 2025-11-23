@@ -86,8 +86,9 @@ class CameraManager {
             }
 
             // Buscar do servidor
-            const cameras = await apiService.getCameras();
-            this.cameras = Array.isArray(cameras) ? cameras : [];
+            const response = await apiService.getCameras();
+            // API retorna {items: [...], total: ...} ou array direto
+            this.cameras = Array.isArray(response) ? response : (response?.items || []);
 
             // Salvar no cache
             await storageService.cacheCameras(this.cameras);

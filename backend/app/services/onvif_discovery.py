@@ -9,13 +9,77 @@ import asyncio
 import logging
 import socket
 import struct
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 from xml.etree import ElementTree
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# URLs RTSP padrao por fabricante
+RTSP_PATHS_BY_MANUFACTURER = {
+    "hikvision": [
+        "/Streaming/Channels/101",
+        "/Streaming/Channels/102",
+        "/h264/ch1/main/av_stream",
+        "/h264/ch1/sub/av_stream",
+    ],
+    "dahua": [
+        "/cam/realmonitor?channel=1&subtype=0",
+        "/cam/realmonitor?channel=1&subtype=1",
+        "/live",
+    ],
+    "axis": [
+        "/axis-media/media.amp",
+        "/mjpg/video.mjpg",
+        "/axis-media/media.amp?videocodec=h264",
+    ],
+    "foscam": [
+        "/videoMain",
+        "/videoSub",
+        "/cgi-bin/CGIStream.cgi?cmd=GetMJStream",
+    ],
+    "reolink": [
+        "/h264Preview_01_main",
+        "/h264Preview_01_sub",
+    ],
+    "amcrest": [
+        "/cam/realmonitor?channel=1&subtype=0",
+        "/cam/realmonitor?channel=1&subtype=1",
+    ],
+    "vivotek": [
+        "/live.sdp",
+        "/live2.sdp",
+    ],
+    "intelbras": [
+        "/cam/realmonitor?channel=1&subtype=0",
+        "/h264/ch1/main/av_stream",
+    ],
+    "generic": [
+        "/stream1",
+        "/stream",
+        "/live/ch00_0",
+        "/h264/ch1/main/av_stream",
+        "/cam/realmonitor?channel=1&subtype=0",
+        "/Streaming/Channels/101",
+        "/video1",
+        "/MediaInput/h264",
+        "/1/stream1",
+        "/ch0_0.h264",
+    ],
+}
+
+# Credenciais padrao por fabricante
+DEFAULT_CREDENTIALS = {
+    "hikvision": [("admin", "admin"), ("admin", "12345"), ("admin", "")],
+    "dahua": [("admin", "admin"), ("admin", ""), ("admin", "123456")],
+    "axis": [("root", "pass"), ("root", "root"), ("admin", "admin")],
+    "foscam": [("admin", ""), ("admin", "admin")],
+    "reolink": [("admin", ""), ("admin", "123456")],
+    "intelbras": [("admin", "admin"), ("admin", "")],
+    "generic": [("admin", "admin"), ("admin", ""), ("admin", "123456"), ("admin", "12345"), ("root", "root")],
+}
 
 # Mensagem WS-Discovery para busca de dispositivos ONVIF
 WS_DISCOVERY_MESSAGE = """<?xml version="1.0" encoding="UTF-8"?>
@@ -304,41 +368,195 @@ class ONVIFDiscoveryService:
         port: int = 80,
         username: Optional[str] = None,
         password: Optional[str] = None,
+        manufacturer: Optional[str] = None,
     ) -> Optional[str]:
         """
-        Obtem a URL RTSP de uma camera via ONVIF.
+        Obtem a URL RTSP de uma camera via ONVIF ou por fabricante.
 
         Args:
             ip_address: IP da camera.
             port: Porta ONVIF.
             username: Usuario para autenticacao.
             password: Senha para autenticacao.
+            manufacturer: Fabricante da camera.
 
         Returns:
             Optional[str]: URL RTSP ou None se falhar.
         """
         try:
-            # TODO: Implementar obtencao de stream URI via ONVIF
-            # Por enquanto, tenta URLs comuns
+            # Primeiro tenta via ONVIF com onvif-zeep
+            rtsp_url = await self._get_rtsp_via_onvif(ip_address, port, username, password)
+            if rtsp_url:
+                return rtsp_url
 
-            common_paths = [
-                "/stream1",
-                "/h264/ch1/main/av_stream",
-                "/cam/realmonitor",
-                "/Streaming/Channels/101",
-                "/live/ch00_0",
-            ]
+            # Fallback: usa URLs padrao por fabricante
+            mfr = (manufacturer or "").lower()
+            paths = RTSP_PATHS_BY_MANUFACTURER.get(mfr, RTSP_PATHS_BY_MANUFACTURER["generic"])
 
             auth = ""
             if username and password:
                 auth = f"{username}:{password}@"
 
-            # Retorna URL padrao mais comum
-            return f"rtsp://{auth}{ip_address}:554{common_paths[0]}"
+            # Retorna primeira URL do fabricante
+            return f"rtsp://{auth}{ip_address}:554{paths[0]}"
 
         except Exception as e:
             logger.error(f"Erro ao obter RTSP URL de {ip_address}: {e}")
             return None
+
+    async def _get_rtsp_via_onvif(
+        self,
+        ip_address: str,
+        port: int,
+        username: Optional[str],
+        password: Optional[str],
+    ) -> Optional[str]:
+        """
+        Obtem URL RTSP via protocolo ONVIF usando onvif-zeep.
+        """
+        try:
+            from onvif import ONVIFCamera
+
+            loop = asyncio.get_event_loop()
+
+            def get_stream_uri():
+                try:
+                    cam = ONVIFCamera(ip_address, port, username or "admin", password or "")
+                    media = cam.create_media_service()
+                    profiles = media.GetProfiles()
+
+                    if profiles:
+                        stream_setup = {
+                            "Stream": "RTP-Unicast",
+                            "Transport": {"Protocol": "RTSP"}
+                        }
+                        uri = media.GetStreamUri({
+                            "StreamSetup": stream_setup,
+                            "ProfileToken": profiles[0].token
+                        })
+                        return uri.Uri
+                except Exception as e:
+                    logger.debug(f"ONVIF GetStreamUri falhou: {e}")
+                return None
+
+            return await loop.run_in_executor(None, get_stream_uri)
+
+        except ImportError:
+            logger.warning("onvif-zeep nao instalado, usando fallback")
+            return None
+        except Exception as e:
+            logger.debug(f"Erro ao obter RTSP via ONVIF: {e}")
+            return None
+
+    async def test_credentials(
+        self,
+        ip_address: str,
+        port: int = 554,
+        username: str = "admin",
+        password: str = "",
+        manufacturer: Optional[str] = None,
+    ) -> dict:
+        """
+        Testa credenciais em uma camera tentando conectar via RTSP.
+
+        Returns:
+            dict com success, rtsp_url, message
+        """
+        import subprocess
+
+        mfr = (manufacturer or "").lower()
+        paths = RTSP_PATHS_BY_MANUFACTURER.get(mfr, RTSP_PATHS_BY_MANUFACTURER["generic"])
+
+        auth = f"{username}:{password}@" if password else f"{username}@" if username else ""
+
+        for path in paths[:5]:  # Testa ate 5 URLs
+            rtsp_url = f"rtsp://{auth}{ip_address}:{port}{path}"
+
+            try:
+                # Usa ffprobe para testar conexao (timeout 3s)
+                result = subprocess.run(
+                    ["ffprobe", "-v", "error", "-rtsp_transport", "tcp",
+                     "-i", rtsp_url, "-show_entries", "stream=codec_type",
+                     "-of", "default=noprint_wrappers=1"],
+                    capture_output=True,
+                    timeout=5,
+                    text=True
+                )
+
+                if result.returncode == 0 or "video" in result.stdout.lower():
+                    logger.info(f"Credenciais validas para {ip_address}: {path}")
+                    return {
+                        "success": True,
+                        "rtsp_url": rtsp_url,
+                        "path": path,
+                        "message": "Conexao bem sucedida"
+                    }
+            except subprocess.TimeoutExpired:
+                continue
+            except FileNotFoundError:
+                # ffprobe nao instalado, tenta socket simples
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(2)
+                    result = sock.connect_ex((ip_address, port))
+                    sock.close()
+                    if result == 0:
+                        return {
+                            "success": True,
+                            "rtsp_url": rtsp_url,
+                            "path": path,
+                            "message": "Porta RTSP acessivel (ffprobe nao disponivel)"
+                        }
+                except Exception:
+                    pass
+                break
+            except Exception as e:
+                logger.debug(f"Erro testando {rtsp_url}: {e}")
+                continue
+
+        return {
+            "success": False,
+            "rtsp_url": None,
+            "message": "Nenhuma URL RTSP funcionou"
+        }
+
+    async def discover_and_test(
+        self,
+        username: str = "admin",
+        password: str = "",
+    ) -> list[dict]:
+        """
+        Descobre cameras na rede e testa credenciais em cada uma.
+
+        Args:
+            username: Usuario para testar
+            password: Senha para testar
+
+        Returns:
+            Lista de cameras com status de conexao
+        """
+        # Descobre cameras
+        cameras = await self.discover()
+        results = []
+
+        for camera in cameras:
+            # Testa credenciais
+            test_result = await self.test_credentials(
+                ip_address=camera.ip_address,
+                port=554,
+                username=username,
+                password=password,
+                manufacturer=camera.manufacturer,
+            )
+
+            result = camera.to_dict()
+            result["connection_test"] = test_result
+            result["rtsp_url"] = test_result.get("rtsp_url")
+            result["is_accessible"] = test_result.get("success", False)
+
+            results.append(result)
+
+        return results
 
     async def test_connection(
         self,
