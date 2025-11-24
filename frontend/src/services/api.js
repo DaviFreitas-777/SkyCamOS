@@ -128,32 +128,40 @@ class ApiService {
 
         try {
             data = await response.json();
-            message = data.message || data.error || message;
+            // FastAPI retorna erros em 'detail', outros backends podem usar 'message' ou 'error'
+            message = data.detail || data.message || data.error || message;
         } catch {
             message = response.statusText || message;
         }
 
-        // Tratar erros especificos
-        switch (response.status) {
-            case 401:
-                authService.logout();
-                message = 'Sessao expirada. Faca login novamente.';
-                break;
-            case 403:
-                message = 'Acesso negado.';
-                break;
-            case 404:
-                message = 'Recurso nao encontrado.';
-                break;
-            case 422:
-                message = data?.errors ? Object.values(data.errors).flat().join(', ') : 'Dados invalidos.';
-                break;
-            case 429:
-                message = 'Muitas requisicoes. Aguarde um momento.';
-                break;
-            case 500:
-                message = 'Erro interno do servidor.';
-                break;
+        // Tratar erros especificos (apenas se nao tiver mensagem especifica do servidor)
+        const hasServerMessage = data?.detail || data?.message || data?.error;
+        if (!hasServerMessage) {
+            switch (response.status) {
+                case 401:
+                    message = 'Sessao expirada. Faca login novamente.';
+                    break;
+                case 403:
+                    message = 'Acesso negado.';
+                    break;
+                case 404:
+                    message = 'Recurso nao encontrado.';
+                    break;
+                case 422:
+                    message = data?.errors ? Object.values(data.errors).flat().join(', ') : 'Dados invalidos.';
+                    break;
+                case 429:
+                    message = 'Muitas requisicoes. Aguarde um momento.';
+                    break;
+                case 500:
+                    message = 'Erro interno do servidor.';
+                    break;
+            }
+        }
+
+        // Logout automatico em caso de token invalido
+        if (response.status === 401) {
+            authService.logout();
         }
 
         const error = new Error(message);
@@ -465,6 +473,24 @@ class ApiService {
     getRecordingStreamUrl(id) {
         const token = authService.getToken();
         return `${this.baseUrl}/api/v1/recordings/${id}/stream?token=${token}`;
+    }
+
+    /**
+     * Iniciar gravacao de camera
+     * @param {string} cameraId - ID da camera
+     * @returns {Promise<Object>}
+     */
+    async startRecording(cameraId) {
+        return this.post(`/api/v1/stream/${cameraId}/recording/start`);
+    }
+
+    /**
+     * Parar gravacao de camera
+     * @param {string} cameraId - ID da camera
+     * @returns {Promise<Object>}
+     */
+    async stopRecording(cameraId) {
+        return this.post(`/api/v1/stream/${cameraId}/recording/stop`);
     }
 
     // --- Eventos ---

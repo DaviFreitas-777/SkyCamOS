@@ -68,7 +68,7 @@ class DashboardPage extends HTMLElement {
                             </div>
                             <div class="stat-info">
                                 <span class="stat-value" id="recording-count">0</span>
-                                <span class="stat-label">Gravando</span>
+                                <span class="stat-label">Rec</span>
                             </div>
                         </div>
                     </div>
@@ -91,7 +91,10 @@ class DashboardPage extends HTMLElement {
     }
 
     addStyles() {
-        if (document.getElementById('dashboard-page-styles')) return;
+        // Remover estilo antigo se existir (para atualizacoes)
+        const existingStyle = document.getElementById('dashboard-page-styles');
+        if (existingStyle) existingStyle.remove();
+
         const styles = document.createElement('style');
         styles.id = 'dashboard-page-styles';
         styles.textContent = `
@@ -111,11 +114,33 @@ class DashboardPage extends HTMLElement {
             .stat-icon.offline { background: rgba(239, 68, 68, 0.2); color: var(--color-error); }
             .stat-icon.recording { background: rgba(239, 68, 68, 0.2); color: var(--color-error); }
             .stat-value { font-size: var(--font-size-xl); font-weight: var(--font-weight-bold); display: block; }
-            .stat-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+            .stat-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); white-space: nowrap; }
             @media (max-width: 1024px) {
                 .dashboard-page { flex-direction: column; }
                 .dashboard-sidebar { width: 100%; }
                 .dashboard-stats { grid-template-columns: repeat(3, 1fr); }
+            }
+            @media (max-width: 500px) {
+                .dashboard-stats { gap: 6px !important; }
+                .stat-card {
+                    padding: 8px !important;
+                    flex-direction: column !important;
+                    text-align: center !important;
+                    gap: 4px !important;
+                    align-items: center !important;
+                }
+                .stat-icon { width: 28px !important; height: 28px !important; }
+                .stat-icon svg { width: 14px !important; height: 14px !important; }
+                .stat-info { display: flex; flex-direction: column; align-items: center; }
+                .stat-value { font-size: 16px !important; }
+                .stat-label { font-size: 11px !important; white-space: nowrap !important; }
+            }
+            @media (max-width: 380px) {
+                .stat-label { font-size: 10px !important; }
+                .stat-card { padding: 6px !important; }
+                .stat-icon { width: 24px !important; height: 24px !important; }
+                .stat-icon svg { width: 12px !important; height: 12px !important; }
+                .stat-value { font-size: 14px !important; }
             }
         `;
         document.head.appendChild(styles);

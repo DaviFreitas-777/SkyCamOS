@@ -325,7 +325,53 @@ class SettingsPage extends HTMLElement {
             .storage-info { font-size: var(--font-size-sm); color: var(--color-text-secondary); }
             @media (max-width: 768px) {
                 .settings-container { flex-direction: column; }
-                .settings-nav { width: 100%; flex-direction: row; overflow-x: auto; }
+                .settings-nav {
+                    width: 100%;
+                    flex-direction: row;
+                    overflow-x: auto;
+                    gap: var(--spacing-xs);
+                    padding-bottom: var(--spacing-xs);
+                    -webkit-overflow-scrolling: touch;
+                }
+                .settings-nav-item {
+                    flex-shrink: 0;
+                    white-space: nowrap;
+                    padding: var(--spacing-sm) var(--spacing-md);
+                    font-size: var(--font-size-sm);
+                    min-height: 44px;
+                }
+                .settings-nav-item svg {
+                    display: none;
+                }
+                .settings-content {
+                    padding: var(--spacing-md);
+                }
+                .settings-section-title {
+                    font-size: var(--font-size-base);
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+                .settings-section-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: var(--spacing-sm);
+                }
+                .settings-form {
+                    max-width: 100%;
+                }
+                .setting-row {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: var(--spacing-sm);
+                }
+                .setting-info {
+                    width: 100%;
+                }
+                .input-label {
+                    white-space: normal;
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
             }
         `;
         document.head.appendChild(styles);

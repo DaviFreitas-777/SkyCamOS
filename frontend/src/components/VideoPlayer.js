@@ -510,24 +510,74 @@ class SkycamVideoPlayer extends HTMLElement {
     }
 
     /**
-     * Capturar snapshot
+     * Capturar snapshot via API do backend
      */
-    captureSnapshot() {
-        const video = this.querySelector('.video-player');
-        if (!video) return;
+    async captureSnapshot() {
+        if (!this.cameraId) {
+            console.error('[VideoPlayer] Camera ID nao definido para snapshot');
+            return;
+        }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        try {
+            // Chama API do backend para capturar snapshot
+            const token = authService.getToken();
+            const baseUrl = API_BASE_URL || window.location.origin.replace(':3000', ':8000');
+            const response = await fetch(`${baseUrl}/api/v1/cameras/${this.cameraId}/snapshot`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(video, 0, 0);
+            if (!response.ok) {
+                throw new Error(`Erro ao capturar snapshot: ${response.status}`);
+            }
 
-        // Download da imagem
-        const link = document.createElement('a');
-        link.download = `snapshot_${this.cameraId}_${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+            // Cria blob e faz download
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+
+            const link = document.createElement('a');
+            link.download = `snapshot_${this.cameraId}_${Date.now()}.jpg`;
+            link.href = url;
+            link.click();
+
+            // Limpa URL do blob
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('[VideoPlayer] Erro ao capturar snapshot:', error);
+
+            // Fallback: tenta usar canvas se for elemento video nativo
+            this._fallbackCanvasSnapshot();
+        }
+    }
+
+    /**
+     * Fallback: captura via canvas (funciona apenas para video nativo, nao MJPEG)
+     */
+    _fallbackCanvasSnapshot() {
+        const video = this.querySelector('video.video-player');
+        if (!video || !video.videoWidth) {
+            console.error('[VideoPlayer] Fallback canvas falhou: elemento video nao disponivel');
+            return;
+        }
+
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+
+            const link = document.createElement('a');
+            link.download = `snapshot_${this.cameraId}_${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (e) {
+            console.error('[VideoPlayer] Fallback canvas falhou:', e);
+        }
     }
 
     /**

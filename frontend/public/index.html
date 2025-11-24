@@ -57,6 +57,207 @@
     <!-- Modal container -->
     <div id="modal-container" class="modal-container"></div>
 
+    <!-- Banner de instalacao PWA (automatico) -->
+    <div id="pwa-install-banner" class="pwa-install-banner" style="display: none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <svg width="32" height="32" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="3"/>
+                    <circle cx="50" cy="50" r="15" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="pwa-banner-text">
+                <strong>Instalar SkyCamOS</strong>
+                <span>Acesse rapido na tela inicial</span>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button id="pwa-install-btn" class="pwa-btn-install">Instalar</button>
+            <button id="pwa-dismiss-btn" class="pwa-btn-dismiss">Agora nao</button>
+        </div>
+    </div>
+
+    <!-- Banner de instalacao manual (para HTTP/mobile) -->
+    <div id="pwa-manual-banner" class="pwa-install-banner" style="display: none;">
+        <div class="pwa-banner-content">
+            <div class="pwa-banner-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </div>
+            <div class="pwa-banner-text">
+                <strong>Adicionar a Tela Inicial</strong>
+                <span>Toque no menu do navegador e "Adicionar"</span>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button id="pwa-manual-how" class="pwa-btn-install">Como fazer?</button>
+            <button id="pwa-manual-dismiss" class="pwa-btn-dismiss">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal de instrucoes de instalacao -->
+    <div id="pwa-instructions-modal" class="pwa-modal" style="display: none;">
+        <div class="pwa-modal-content">
+            <button id="pwa-modal-close" class="pwa-modal-close">&times;</button>
+            <h3>Como instalar o SkyCamOS</h3>
+            <div class="pwa-instructions">
+                <div class="pwa-instruction-item">
+                    <div class="pwa-step">1</div>
+                    <div class="pwa-step-text">
+                        <strong>Android (Chrome)</strong>
+                        <p>Toque nos 3 pontos (menu) > "Adicionar a tela inicial"</p>
+                    </div>
+                </div>
+                <div class="pwa-instruction-item">
+                    <div class="pwa-step">2</div>
+                    <div class="pwa-step-text">
+                        <strong>iPhone (Safari)</strong>
+                        <p>Toque no icone de compartilhar > "Adicionar a Tela de Inicio"</p>
+                    </div>
+                </div>
+            </div>
+            <button id="pwa-modal-ok" class="pwa-btn-install" style="width: 100%; margin-top: 16px;">Entendi!</button>
+        </div>
+    </div>
+
+    <style>
+        .pwa-install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            color: #fff;
+            padding: 16px;
+            z-index: 10000;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease-out;
+            border-top: 2px solid #3b82f6;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .pwa-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .pwa-banner-icon {
+            color: #3b82f6;
+            flex-shrink: 0;
+        }
+        .pwa-banner-text {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .pwa-banner-text strong {
+            font-size: 16px;
+        }
+        .pwa-banner-text span {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+        .pwa-banner-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .pwa-btn-install {
+            flex: 1;
+            padding: 12px 20px;
+            background: #3b82f6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .pwa-btn-install:hover {
+            background: #2563eb;
+        }
+        .pwa-btn-dismiss {
+            padding: 12px 16px;
+            background: transparent;
+            color: #94a3b8;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .pwa-btn-dismiss:hover {
+            background: #1e293b;
+        }
+        /* Modal de instrucoes */
+        .pwa-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 10001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .pwa-modal-content {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 100%;
+            position: relative;
+        }
+        .pwa-modal-content h3 {
+            color: #fff;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        .pwa-modal-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .pwa-instruction-item {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+        .pwa-step {
+            width: 28px;
+            height: 28px;
+            background: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .pwa-step-text strong {
+            color: #fff;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .pwa-step-text p {
+            color: #94a3b8;
+            font-size: 13px;
+            margin: 0;
+        }
+    </style>
+
     <!-- Configuracao de ambiente -->
     <script src="/env.js"></script>
 
@@ -106,19 +307,117 @@
 
         // Prompt de instalacao PWA
         let deferredPrompt;
+        const pwaBanner = document.getElementById('pwa-install-banner');
+        const pwaInstallBtn = document.getElementById('pwa-install-btn');
+        const pwaDismissBtn = document.getElementById('pwa-dismiss-btn');
+
+        // Verificar se usuario ja dispensou o banner recentemente (24h)
+        const pwaDismissed = localStorage.getItem('pwa-dismissed');
+        const canShowBanner = !pwaDismissed || (Date.now() - parseInt(pwaDismissed)) > 86400000;
+
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('[PWA] beforeinstallprompt capturado!');
             e.preventDefault();
             deferredPrompt = e;
+            window.deferredPrompt = e;
+
+            // Mostrar banner se usuario nao dispensou recentemente
+            if (canShowBanner && pwaBanner) {
+                // Aguardar um pouco para nao aparecer junto com o loading
+                setTimeout(() => {
+                    pwaBanner.style.display = 'block';
+                }, 2000);
+            }
 
             // Disparar evento customizado para a aplicacao
             window.dispatchEvent(new CustomEvent('pwa-installable', { detail: deferredPrompt }));
         });
 
+        // Botao de instalar
+        if (pwaInstallBtn) {
+            pwaInstallBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+
+                // Mostrar prompt nativo
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('[PWA] Escolha do usuario:', outcome);
+
+                // Ocultar banner
+                if (pwaBanner) pwaBanner.style.display = 'none';
+                deferredPrompt = null;
+            });
+        }
+
+        // Botao de dispensar
+        if (pwaDismissBtn) {
+            pwaDismissBtn.addEventListener('click', () => {
+                if (pwaBanner) pwaBanner.style.display = 'none';
+                localStorage.setItem('pwa-dismissed', Date.now().toString());
+            });
+        }
+
         // Detectar quando PWA foi instalado
         window.addEventListener('appinstalled', () => {
-            console.log('[PWA] Aplicacao instalada com sucesso');
+            console.log('[PWA] Aplicacao instalada com sucesso!');
+            if (pwaBanner) pwaBanner.style.display = 'none';
             deferredPrompt = null;
+            window.deferredPrompt = null;
         });
+
+        // Banner manual para HTTP (celular via rede local)
+        const pwaManualBanner = document.getElementById('pwa-manual-banner');
+        const pwaManualHow = document.getElementById('pwa-manual-how');
+        const pwaManualDismiss = document.getElementById('pwa-manual-dismiss');
+        const pwaModal = document.getElementById('pwa-instructions-modal');
+        const pwaModalClose = document.getElementById('pwa-modal-close');
+        const pwaModalOk = document.getElementById('pwa-modal-ok');
+
+        // Verificar se deve mostrar banner manual
+        const isHTTP = window.location.protocol === 'http:';
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const manualDismissed = localStorage.getItem('pwa-manual-dismissed');
+        const canShowManual = !manualDismissed || (Date.now() - parseInt(manualDismissed)) > 86400000;
+
+        // Se estiver em HTTP (nao localhost) e for mobile, mostrar banner manual
+        if (isHTTP && !isLocalhost && isMobile && canShowManual && pwaManualBanner) {
+            setTimeout(() => {
+                // So mostrar se o banner automatico nao apareceu
+                if (!deferredPrompt) {
+                    pwaManualBanner.style.display = 'block';
+                }
+            }, 3000);
+        }
+
+        // Botao "Como fazer?"
+        if (pwaManualHow) {
+            pwaManualHow.addEventListener('click', () => {
+                if (pwaModal) pwaModal.style.display = 'flex';
+                if (pwaManualBanner) pwaManualBanner.style.display = 'none';
+            });
+        }
+
+        // Fechar banner manual
+        if (pwaManualDismiss) {
+            pwaManualDismiss.addEventListener('click', () => {
+                if (pwaManualBanner) pwaManualBanner.style.display = 'none';
+                localStorage.setItem('pwa-manual-dismissed', Date.now().toString());
+            });
+        }
+
+        // Fechar modal
+        function closeModal() {
+            if (pwaModal) pwaModal.style.display = 'none';
+            localStorage.setItem('pwa-manual-dismissed', Date.now().toString());
+        }
+        if (pwaModalClose) pwaModalClose.addEventListener('click', closeModal);
+        if (pwaModalOk) pwaModalOk.addEventListener('click', closeModal);
+        if (pwaModal) {
+            pwaModal.addEventListener('click', (e) => {
+                if (e.target === pwaModal) closeModal();
+            });
+        }
     </script>
 
     <!-- Fallback para navegadores sem suporte a modules -->

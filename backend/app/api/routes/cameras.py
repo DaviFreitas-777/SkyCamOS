@@ -723,7 +723,16 @@ async def get_camera_snapshot(
             detail="Nao foi possivel capturar snapshot",
         )
 
+    # Gera nome do arquivo para download
+    from datetime import datetime
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    filename = f"snapshot_camera_{camera_id}_{timestamp}.jpg"
+
     return Response(
         content=frame,
         media_type="image/jpeg",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+        }
     )

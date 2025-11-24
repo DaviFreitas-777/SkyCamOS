@@ -22,6 +22,7 @@ from app.models.user import User
 from app.services.stream_service import stream_service
 from app.services.recording_service import recording_service
 from app.services.notification_service import notification_service
+from app.services.auto_recording_manager import auto_recording_manager
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,13 @@ async def mjpeg_stream(
             # Atualiza status para erro
             if camera.status != "error":
                 camera.status = "error"
+                camera.is_recording = False
                 await db.commit()
+
+                # Para gravacao automatica se estava gravando
+                if camera.id in auto_recording_manager.cameras_recording:
+                    asyncio.create_task(auto_recording_manager.stop_camera_recording(camera.id))
+
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Nao foi possivel iniciar stream",
@@ -94,6 +101,10 @@ async def mjpeg_stream(
             camera.last_seen = datetime.utcnow()
             await db.commit()
             logger.info(f"Camera {camera_id} status atualizado para online")
+
+            # Inicia gravacao automatica
+            if auto_recording_manager.is_running and camera.is_enabled:
+                asyncio.create_task(auto_recording_manager.start_camera_recording(camera_id))
 
     # Obtem streamer MJPEG
     streamer = stream_service.get_mjpeg_streamer(camera_id)

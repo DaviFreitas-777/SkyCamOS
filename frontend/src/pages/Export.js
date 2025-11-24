@@ -314,6 +314,15 @@ class ExportPage extends HTMLElement {
                 }),
             });
 
+            // Backend retorna null se nao houver gravacoes no periodo
+            if (!response || response === null) {
+                this.notifications.warning('Nenhuma gravacao encontrada no periodo selecionado');
+                this.preview = null;
+                this.querySelector('#preview-container').style.display = 'none';
+                this.querySelector('#btn-export').disabled = true;
+                return;
+            }
+
             this.preview = response;
             this.renderPreview();
             this.querySelector('#btn-export').disabled = false;

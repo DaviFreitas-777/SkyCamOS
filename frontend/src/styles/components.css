@@ -753,11 +753,53 @@
 
     .tabs {
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
     }
 
     .tab {
-        flex: 1;
+        flex-shrink: 0;
         text-align: center;
+        white-space: nowrap;
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+}
+
+/* === Responsividade Mobile para Formularios === */
+@media (max-width: 768px) {
+    .input-group {
+        width: 100%;
+    }
+
+    .input-label {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        line-height: 1.3;
+    }
+
+    .checkbox-group,
+    .radio-group {
+        flex-wrap: wrap;
+    }
+
+    .checkbox-group label,
+    .radio-group label {
+        white-space: normal;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .input-helper {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 }
 
@@ -808,5 +850,68 @@
     /* Scroll suave para inputs em foco */
     .input:focus {
         scroll-margin-bottom: 150px;
+    }
+}
+
+/* === Classes Utilitarias de Responsividade === */
+/* Largura total em mobile */
+.mobile-full-width {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Corrigir overflow de texto */
+.text-overflow-fix {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Grid responsivo automatico */
+.grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--spacing-md);
+}
+
+/* Flex wrap automatico */
+.flex-wrap-auto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+/* Ocultar em mobile */
+@media (max-width: 768px) {
+    .hide-mobile {
+        display: none !important;
+    }
+}
+
+/* Mostrar apenas em mobile */
+@media (min-width: 769px) {
+    .show-mobile-only {
+        display: none !important;
+    }
+}
+
+/* Flex column em mobile */
+@media (max-width: 768px) {
+    .mobile-col {
+        flex-direction: column !important;
+    }
+}
+
+/* Padding menor em mobile */
+@media (max-width: 480px) {
+    .mobile-padding-sm {
+        padding: var(--spacing-sm) !important;
+    }
+}
+
+/* Font menor em mobile pequeno */
+@media (max-width: 360px) {
+    .mobile-text-sm {
+        font-size: var(--font-size-xs) !important;
     }
 }

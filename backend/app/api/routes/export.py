@@ -110,19 +110,21 @@ async def list_formats(
 
 @router.post(
     "/preview",
-    response_model=PreviewResponse,
+    response_model=Optional[PreviewResponse],
     summary="Preview de exportacao",
-    description="Gera preview de um periodo para verificar antes de exportar.",
+    description="Gera preview de um periodo para verificar antes de exportar. Retorna null se nao houver gravacoes.",
 )
 async def generate_preview(
     data: PreviewRequest,
     current_user: Annotated[User, Depends(get_current_active_user)],
-) -> PreviewResponse:
+) -> Optional[PreviewResponse]:
     """
     Gera preview de exportacao.
 
     Permite ao usuario verificar se o periodo esta correto
     antes de iniciar a exportacao.
+
+    Retorna null se nao houver gravacoes no periodo.
     """
     # Valida periodo
     if data.end_time <= data.start_time:
@@ -146,10 +148,8 @@ async def generate_preview(
     )
 
     if not preview:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhuma gravacao encontrada no periodo especificado",
-        )
+        # Retorna null ao inves de 404 - nao e erro, apenas nao ha gravacoes
+        return None
 
     return PreviewResponse(**preview)
 

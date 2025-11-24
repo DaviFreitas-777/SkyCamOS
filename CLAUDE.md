@@ -49,20 +49,20 @@ cd frontend && npm test
 ## Arquitetura
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   SKYCAMOS                       │
-├─────────────────────────────────────────────────┤
-│  ┌────────────┐  ┌────────────┐  ┌───────────┐ │
-│  │  DESKTOP   │  │  BACKEND   │  │  WEB/PWA  │ │
-│  │  MANAGER   │◄─► API (8000) │◄─► (3000)    │ │
-│  └────────────┘  └────────────┘  └───────────┘ │
-│                        │                        │
-│                   ┌────────────┐                │
-│                   │  SQLite    │                │
-│                   │  Database  │                │
-│                   └────────────┘                │
-└─────────────────────────────────────────────────┘
-                        │
++-------------------------------------------------+
+|                   SKYCAMOS                       |
++-------------------------------------------------+
+|  +------------+  +------------+  +-----------+  |
+|  |  DESKTOP   |  |  BACKEND   |  |  WEB/PWA  |  |
+|  |  MANAGER   |<->| API (8000) |<->| (3000)    | |
+|  +------------+  +------------+  +-----------+  |
+|                        |                        |
+|                  +------------+                 |
+|                  |  SQLite    |                 |
+|                  |  Database  |                 |
+|                  +------------+                 |
++-------------------------------------------------+
+                        |
                    CAMERAS IP
                   (ONVIF/RTSP)
 ```
@@ -79,16 +79,21 @@ cd frontend && npm test
 - `/api/v1/cameras/*` - CRUD de cameras
 - `/api/v1/recordings/*` - Gravacoes
 - `/api/v1/events/*` - Eventos de movimento
-- `/api/v1/stream/*` - Streaming MJPEG/WebSocket
+- `/api/v1/stream/*` - Streaming MJPEG/WebSocket + controle gravacao
+- `/api/v1/export/*` - Exportacao de videos por periodo
 - `/api/v1/analytics/*` - IA (person detection, line crossing)
 - `/api/v1/notifications/*` - Push notifications
 - `/api/v1/settings/*` - Configuracoes
+- `/api/v1/storage/*` - Gerenciamento de armazenamento
 
 **Servicos principais:**
-- `motion_detection.py` - Deteccao de movimento (OpenCV)
+- `auto_recording_manager.py` - Gravacao automatica de cameras (inicia quando online)
+- `recording_service.py` - Gravacao FFmpeg com copy codec (sem re-encoding)
+- `export_service.py` - Exportacao de videos por periodo com concatenacao
+- `stream_service.py` - Streaming MJPEG e WebSocket
+- `motion_detection.py` - Deteccao de movimento (OpenCV MOG2)
 - `person_detection.py` - Deteccao de pessoas (MobileNet SSD/HOG)
-- `line_crossing.py` - Cruzamento de linhas virtuais
-- `storage_manager.py` - Gerenciamento de disco FIFO
+- `storage_manager.py` - Gerenciamento de disco FIFO com limpeza automatica
 
 ### Frontend (Vanilla JS PWA)
 
@@ -97,14 +102,14 @@ cd frontend && npm test
 - **Main JS:** `/frontend/src/index.js`
 
 **Estrutura:**
-- `/src/pages/` - Paginas (Dashboard, Recordings, Events, Settings, Login)
-- `/src/components/` - Componentes reutilizaveis
+- `/src/pages/` - Dashboard, Recordings, Events, Settings, Login, Export
+- `/src/components/` - Web Components reutilizaveis (CameraGrid, VideoPlayer, Sidebar)
 - `/src/services/` - API client, auth, notifications
-- `/src/hooks/` - Custom hooks (useAuth, useCamera, useWebSocket)
-- `/public/` - Assets estaticos, sw.js, manifest.json
+- `/src/hooks/` - Custom hooks (useAuth, useCamera, useWebSocket, useNotifications)
+- `/public/` - Assets estaticos, sw.js (v7), manifest.json
 
 **PWA:**
-- Service Worker em `/public/sw.js`
+- Service Worker em `/public/sw.js` (versao atual: v7)
 - Manifest em `/public/manifest.json`
 - Configuracao Vercel em `/vercel.json`
 
@@ -112,11 +117,12 @@ cd frontend && npm test
 
 | Camada | Tecnologia |
 |--------|------------|
-| Backend | Python 3.11+, FastAPI, SQLAlchemy, OpenCV |
-| Frontend | Vanilla JS (ES modules), HLS.js |
+| Backend | Python 3.11+, FastAPI, SQLAlchemy, OpenCV, FFmpeg |
+| Frontend | Vanilla JS (ES modules, Web Components) |
 | Database | SQLite (aiosqlite) |
 | Auth | JWT (python-jose, bcrypt) |
-| Streaming | MJPEG, WebSocket, HLS |
+| Streaming | MJPEG, WebSocket |
+| Recording | FFmpeg (copy codec, segmentos MKV 5min) |
 | AI | OpenCV (MOG2, HOG), MobileNet SSD |
 
 ## Credenciais Padrao
@@ -135,6 +141,26 @@ Backend usa `.env` na raiz do backend:
 - `CORS_ORIGINS` - URLs permitidas
 
 Frontend usa `/frontend/public/env.js` para detectar ambiente automaticamente.
+
+## Fluxo de Gravacao Automatica
+
+1. **Startup:** `AutoRecordingManager` inicia no startup do backend
+2. **Monitoramento:** Verifica cameras a cada 30 segundos
+3. **Gravacao:** Inicia FFmpeg quando camera fica `online`, para quando fica `offline`
+4. **Segmentos:** Arquivos MKV de 5 minutos em `/recordings/camera_{id}/`
+5. **Limpeza:** `StorageManager` limpa arquivos antigos (FIFO, 30 dias retencao)
+
+## Exportacao de Videos
+
+- **Pagina:** `/export` no frontend
+- **Fluxo:** Selecionar camera -> Data/Hora -> Preview -> Exportar
+- **Formatos:** MP4, MKV, AVI, WebM
+- **Limite:** Maximo 24 horas por exportacao
+
+## Dependencias Externas
+
+- **FFmpeg:** Necessario para gravacao. Instalar via `winget install Gyan.FFmpeg` (Windows)
+- **OpenCV:** Incluido nas dependencias Python
 
 ## Documentacao Adicional
 

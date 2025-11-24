@@ -73,11 +73,19 @@ class FFmpegRecorder:
         ffmpeg = shutil.which("ffmpeg")
         if ffmpeg:
             return ffmpeg
-        # Windows: tenta locais comuns
+        # Windows: tenta locais comuns incluindo winget
+        import glob
         common_paths = [
             "C:\\ffmpeg\\bin\\ffmpeg.exe",
             "C:\\Program Files\\ffmpeg\\bin\\ffmpeg.exe",
         ]
+        # Adiciona path do winget (instalacao via winget install Gyan.FFmpeg)
+        winget_pattern = os.path.expanduser(
+            "~\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Gyan.FFmpeg*\\ffmpeg-*\\bin\\ffmpeg.exe"
+        )
+        winget_paths = glob.glob(winget_pattern)
+        if winget_paths:
+            common_paths.extend(winget_paths)
         for path in common_paths:
             if os.path.exists(path):
                 return path

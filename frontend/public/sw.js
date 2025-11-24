@@ -3,9 +3,9 @@
  * PWA com cache, push notifications e background sync
  */
 
-const CACHE_NAME = 'skycamos-v4';
-const STATIC_CACHE = 'skycamos-static-v4';
-const DYNAMIC_CACHE = 'skycamos-dynamic-v4';
+const CACHE_NAME = 'skycamos-v7';
+const STATIC_CACHE = 'skycamos-static-v7';
+const DYNAMIC_CACHE = 'skycamos-dynamic-v7';
 
 // Arquivos para cache estatico
 const STATIC_ASSETS = [

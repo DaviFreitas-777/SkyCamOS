@@ -20,6 +20,7 @@ from app.api import api_router
 from app.config import settings
 from app.core.database import close_db, create_initial_data, init_db
 from app.services.storage_manager import storage_manager
+from app.services.auto_recording_manager import auto_recording_manager
 
 # Configuracao de logging
 logging.basicConfig(
@@ -59,6 +60,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         # Inicia gerenciador de armazenamento
         await storage_manager.start()
 
+        # Inicia gravacao automatica de cameras
+        await auto_recording_manager.start()
+
         logger.info("Aplicacao iniciada com sucesso")
 
     except Exception as e:
@@ -71,6 +75,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Encerrando aplicacao...")
 
     try:
+        # Para gravacao automatica
+        await auto_recording_manager.stop()
+
         # Para servicos
         await storage_manager.stop()
 

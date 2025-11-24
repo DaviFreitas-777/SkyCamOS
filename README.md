@@ -348,9 +348,11 @@ git push origin feature/minha-feature
 - [x] Estrutura inicial do projeto
 - [x] Descoberta de cameras ONVIF/SSDP
 - [x] Visualizacao ao vivo (MJPEG/WebSocket)
-- [x] Gravacao local
+- [x] Gravacao automatica (FFmpeg copy codec)
 - [x] Interface web basica (Dashboard, Login, Recordings, Events, Settings)
-- [x] PWA instalavel (manifest.json, Service Worker)
+- [x] PWA instalavel (manifest.json, Service Worker v7)
+- [x] Sistema de exportacao com preview e seletor de periodo
+- [x] Gerenciamento de armazenamento FIFO
 
 ### Versao 1.1 - Em Progresso
 
@@ -358,6 +360,8 @@ git push origin feature/minha-feature
 - [x] Deteccao de movimento por software (OpenCV MOG2)
 - [x] Notificacoes push (Service Worker + Backend)
 - [x] Timeline de gravacoes
+- [x] Gravacao automatica ao detectar camera online
+- [x] Storage Pools para gerenciamento de disco
 
 ### Versao 2.0 - Parcialmente Implementada
 
@@ -365,6 +369,7 @@ git push origin feature/minha-feature
 - [ ] Integracao com assistentes de voz
 - [ ] Modo cloud (opcional)
 - [x] Line crossing detection
+- [ ] Reconhecimento facial
 
 ---
 
